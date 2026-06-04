@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bloques</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <h1>Bloques</h1>
+          <p id="connection-status">Conectando...</p>
+        </div>
+      </header>
+
+      <section id="error-panel" class="error-panel" hidden></section>
+      <section id="grid" class="grid" aria-label="Cuadricula de bloques"></section>
+
+      <footer class="legend" aria-label="Niveles de bloque">
+        <span><i class="swatch white"></i>0</span>
+        <span><i class="swatch gray"></i>5</span>
+        <span><i class="swatch orange"></i>15</span>
+        <span><i class="swatch yellow"></i>35</span>
+        <span><i class="swatch green"></i>65</span>
+        <span><i class="swatch blue"></i>105</span>
+        <span><i class="swatch red"></i>155</span>
+        <span><i class="swatch black"></i>255</span>
+      </footer>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
