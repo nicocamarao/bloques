@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Numberblocks Sum Quest</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hud">
+        <div>
+          <h1>Numberblocks Sum Quest</h1>
+          <p>Une amigos, suma exacto y abre los muros 10, 20, 30, 40 y 50.</p>
+        </div>
+        <div class="controls">
+          <span>← → mover</span>
+          <span>↑ o espacio saltar</span>
+          <span>R reiniciar</span>
+        </div>
+      </section>
+      <canvas id="game" aria-label="Juego Numberblocks Sum Quest"></canvas>
+      <section class="mobile-controls" aria-hidden="true">
+        <button data-action="left">◀</button>
+        <button data-action="jump">⤒</button>
+        <button data-action="right">▶</button>
+      </section>
+    </main>
+    <script src="./game.js"></script>
+  </body>
+</html>
