@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat Infinito</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <a href="../../index.html">Bloques Arcade</a>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../pianito/index.html">Pianito</a>
+          <a href="../jump-neon/index.html">Jump Neon</a>
+        </nav>
+      </header>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Comunidad</p>
+          <h1>Chat Infinito</h1>
+          <p>Mensajes persistidos en Firebase Realtime Database, sin cerrar la sala.</p>
+        </div>
+        <div class="hud">
+          <strong id="status">Conectando...</strong>
+          <span id="count">0 mensajes</span>
+        </div>
+      </section>
+      <section class="chat-shell">
+        <div class="messages" id="messages"></div>
+        <form class="composer" id="composer">
+          <input id="name" placeholder="Nombre" maxlength="24" required>
+          <input id="message" placeholder="Escribi un mensaje..." maxlength="240" required>
+          <button type="submit">Enviar</button>
+        </form>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

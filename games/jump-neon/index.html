@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jump Neon</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script>
+      window.JUMP_CONFIG = {
+        title: "Jump Neon",
+        startValue: 1,
+        speed: 7.2,
+        jumpForce: 13.2,
+        scoreStep: 15,
+        palette: {
+          1: { bg: "#06b6d4", fg: "#04111f", border: "#0891b2" },
+          10: { bg: "#22c55e", fg: "#04111f", border: "#15803d" },
+          20: { bg: "#f59e0b", fg: "#04111f", border: "#b45309" },
+          30: { bg: "#ef4444", fg: "#ffffff", border: "#b91c1c" },
+          40: { bg: "#a855f7", fg: "#ffffff", border: "#7e22ce" },
+          50: { bg: "#f97316", fg: "#04111f", border: "#c2410c" }
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <a href="../../index.html">Bloques Arcade</a>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../pianito/index.html">Pianito</a>
+          <a href="../chat-infinito/index.html">Chat</a>
+        </nav>
+      </header>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Motor Jump</p>
+          <h1>Jump Neon</h1>
+          <p>Una variante mas rapida del motor de Numberblocks Jump.</p>
+        </div>
+        <div class="hud">
+          <strong id="jump-score">Puntos: 0</strong>
+          <span id="jump-unlocked">Desbloqueado: 1</span>
+          <button id="start">Iniciar</button>
+        </div>
+      </section>
+      <canvas id="game"></canvas>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

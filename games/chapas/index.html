@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OCR de Chapa UY</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7fb;
+        --panel: rgba(255, 255, 255, 0.9);
+        --text: #0f172a;
+        --muted: #5b6476;
+        --accent: #0f5db8;
+        --accent-2: #1f9d7a;
+        --border: rgba(15, 23, 42, 0.12);
+        --shadow: 0 18px 50px rgba(15, 23, 42, 0.14);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(15, 93, 184, 0.14), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(31, 157, 122, 0.14), transparent 26%),
+          var(--bg);
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 20px;
+      }
+      h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 3rem); }
+      p { margin: 0; color: var(--muted); line-height: 1.5; }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 16px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .viewer {
+        position: relative;
+        min-height: 540px;
+        background: #09111f;
+      }
+      video, canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .primary { background: var(--accent); color: white; }
+      .secondary { background: #e7eef8; color: var(--text); }
+      .status {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 93, 184, 0.05);
+      }
+      .panel {
+        padding: 16px;
+      }
+      .label {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .plate {
+        font-size: clamp(2rem, 6vw, 3.5rem);
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        margin: 0 0 10px;
+      }
+      .result {
+        font-size: 1rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+      .item {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 12px;
+        background: white;
+      }
+      .item strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+      .fine-detail {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+      }
+      .hint {
+        font-size: 0.93rem;
+        color: var(--muted);
+      }
+      .ok { color: var(--accent-2); font-weight: 700; }
+      .err { color: #c0392b; font-weight: 700; }
+      @media (max-width: 920px) {
+        .grid { grid-template-columns: 1fr; }
+        .viewer { min-height: 360px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <p><a href="../../index.html">Bloques Arcade</a></p>
+          <h1>OCR de chapa Yorugua 3</h1>
+          <p>Abre la cámara, detecta la matrícula automáticamente y consulta infracciones en línea.</p>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <div class="viewer">
+            <video id="video" playsinline autoplay muted></video>
+            <canvas id="overlay"></canvas>
+          </div>
+          <div class="controls">
+            <button class="primary" id="startBtn">Activar cámara</button>
+            <button class="secondary" id="captureBtn">Capturar y leer</button>
+            <button class="secondary" id="stopBtn">Detener</button>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="status" id="status">Listo para empezar.</div>
+          <div class="panel">
+            <div class="label">Chapa detectada</div>
+            <div class="plate" id="plate">---</div>
+            <div class="label">OCR / respuesta</div>
+            <div class="result" id="ocrText">Todavía no se analizó ninguna imagen.</div>
+          </div>
+          <div class="panel">
+            <div class="label">Infracciones</div>
+            <div class="list" id="offenses">
+              <div class="item hint">Cuando aparezca una chapa válida, acá se mostrarán los resultados del sitio.</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const video = document.getElementById('video');
+      const overlay = document.getElementById('overlay');
+      const ctx = overlay.getContext('2d');
+      const statusEl = document.getElementById('status');
+      const plateEl = document.getElementById('plate');
+      const ocrEl = document.getElementById('ocrText');
+      const offensesEl = document.getElementById('offenses');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const captureBtn = document.getElementById('captureBtn');
+
+      let stream = null;
+      let lastPlate = '';
+
+      const LETTER_FIXES = {
+        0: 'O',
+        1: 'I',
+        2: 'Z',
+        4: 'A',
+        5: 'S',
+        6: 'G',
+        8: 'B',
+      };
+      const DIGIT_FIXES = {
+        O: '0',
+        Q: '0',
+        D: '0',
+        I: '1',
+        L: '1',
+        T: '1',
+        Z: '2',
+        S: '5',
+        B: '8',
+        G: '6',
+      };
+
+      const normalizePlate = (text) =>
+        text
+          .toUpperCase()
+          .replace(/Ñ/g, 'N')
+          .replace(/[^A-Z0-9]/g, '');
+
+      const isLikelyUruguayPlate = (text) => {
+        return Boolean(extractPlate(text).plate);
+      };
+
+      function cropCanvas(sourceCanvas, rect) {
+        const out = document.createElement('canvas');
+        out.width = Math.max(1, Math.round(sourceCanvas.width * rect.w));
+        out.height = Math.max(1, Math.round(sourceCanvas.height * rect.h));
+        out.getContext('2d').drawImage(
+          sourceCanvas,
+          Math.round(sourceCanvas.width * rect.x),
+          Math.round(sourceCanvas.height * rect.y),
+          out.width,
+          out.height,
+          0,
+          0,
+          out.width,
+          out.height
+        );
+        return out;
+      }
+
+      function resizeForOcr(sourceCanvas, minWidth = 1400) {
+        const scale = Math.max(1, minWidth / sourceCanvas.width);
+        const out = document.createElement('canvas');
+        out.width = Math.round(sourceCanvas.width * scale);
+        out.height = Math.round(sourceCanvas.height * scale);
+        const outCtx = out.getContext('2d');
+        outCtx.imageSmoothingEnabled = true;
+        outCtx.imageSmoothingQuality = 'high';
+        outCtx.drawImage(sourceCanvas, 0, 0, out.width, out.height);
+        return out;
+      }
+
+      function preprocessCanvas(sourceCanvas, options = {}) {
+        const {
+          threshold = 150,
+          contrast = 1.35,
+          invert = false,
+          padding = 16,
+        } = options;
+        const resized = resizeForOcr(sourceCanvas);
+        const out = document.createElement('canvas');
+        out.width = resized.width + padding * 2;
+        out.height = resized.height + padding * 2;
+        const outCtx = out.getContext('2d', { willReadFrequently: true });
+        outCtx.fillStyle = '#ffffff';
+        outCtx.fillRect(0, 0, out.width, out.height);
+        outCtx.drawImage(resized, padding, padding);
+        const image = outCtx.getImageData(0, 0, out.width, out.height);
+        const { data } = image;
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+          const contrasted = Math.max(0, Math.min(255, (gray - 128) * contrast + 128));
+          const boosted = contrasted > threshold ? 255 : 0;
+          const value = invert ? 255 - boosted : boosted;
+          data[i] = value;
+          data[i + 1] = value;
+          data[i + 2] = value;
+          data[i + 3] = 255;
+        }
+        outCtx.putImageData(image, 0, 0);
+        return out;
+      }
+
+      function grayscaleCanvas(sourceCanvas) {
+        const resized = resizeForOcr(sourceCanvas);
+        const out = document.createElement('canvas');
+        out.width = resized.width;
+        out.height = resized.height;
+        const outCtx = out.getContext('2d', { willReadFrequently: true });
+        outCtx.drawImage(resized, 0, 0);
+        const image = outCtx.getImageData(0, 0, out.width, out.height);
+        const { data } = image;
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+          const value = Math.max(0, Math.min(255, (gray - 128) * 1.55 + 128));
+          data[i] = value;
+          data[i + 1] = value;
+          data[i + 2] = value;
+          data[i + 3] = 255;
+        }
+        outCtx.putImageData(image, 0, 0);
+        return out;
+      }
+
+      function canvasToBase64(canvas) {
+        return canvas.toDataURL('image/png').split(',')[1];
+      }
+
+      function fixCandidateShape(candidate) {
+        const clean = normalizePlate(candidate);
+        if (clean.length !== 7) return '';
+        const letters = clean
+          .slice(0, 3)
+          .split('')
+          .map((char) => LETTER_FIXES[char] || char)
+          .join('');
+        const digits = clean
+          .slice(3)
+          .split('')
+          .map((char) => DIGIT_FIXES[char] || char)
+          .join('');
+        const plate = letters + digits;
+        return /^[A-Z]{3}\d{4}$/.test(plate) ? plate : '';
+      }
+
+      function buildPlateCandidates(text) {
+        const normalized = normalizePlate(text);
+        const chunks = [
+          ...text.toUpperCase().matchAll(/[A-Z0-9][A-Z0-9\s\-_.:]{4,12}[A-Z0-9]/g),
+        ].map((match) => normalizePlate(match[0]));
+        const windows = [];
+        for (let i = 0; i <= normalized.length - 7; i += 1) {
+          windows.push(normalized.slice(i, i + 7));
+        }
+        return [...new Set([...chunks, ...windows].filter((item) => item.length >= 7))];
+      }
+
+      function extractPlate(text) {
+        let best = { plate: '', score: 0, raw: '' };
+        for (const candidate of buildPlateCandidates(text)) {
+          const raw = candidate.length === 7 ? candidate : candidate.slice(0, 7);
+          const plate = fixCandidateShape(raw);
+          if (!plate) continue;
+          const score = scorePlateCandidate(plate, raw);
+          if (score > best.score) {
+            best = { plate, score, raw };
+          }
+        }
+        return best;
+      }
+
+      function scorePlateCandidate(plate, raw = plate) {
+        const normalized = normalizePlate(plate);
+        if (!/^[A-Z]{3}\d{4}$/.test(normalized)) return 0;
+        let score = 60;
+        score += normalized.length === 7 ? 20 : 0;
+        score += /[A-Z]{3}/.test(normalized.slice(0, 3)) ? 10 : 0;
+        score += /\d{4}/.test(normalized.slice(3)) ? 10 : 0;
+        score -= [...normalizePlate(raw)].filter((char, index) => normalized[index] !== char).length * 4;
+        return score;
+      }
+
+      function makeOcrAttempts(canvas) {
+        const crops = [
+          { name: 'foto completa', canvas },
+          { name: 'centro ancho', canvas: cropCanvas(canvas, { x: 0.06, y: 0.28, w: 0.88, h: 0.44 }) },
+          { name: 'franja baja', canvas: cropCanvas(canvas, { x: 0.06, y: 0.42, w: 0.88, h: 0.32 }) },
+          { name: 'chapa probable', canvas: cropCanvas(canvas, { x: 0.18, y: 0.36, w: 0.64, h: 0.28 }) },
+        ];
+        const variants = [
+          { label: 'contraste suave', build: (source) => grayscaleCanvas(source) },
+          { label: 'alto contraste', build: (source) => preprocessCanvas(source, { threshold: 150, contrast: 1.45 }) },
+          { label: 'umbral claro', build: (source) => preprocessCanvas(source, { threshold: 175, contrast: 1.65 }) },
+          { label: 'invertido', build: (source) => preprocessCanvas(source, { threshold: 140, contrast: 1.45, invert: true }) },
+        ];
+        return crops.flatMap((crop) =>
+          variants.map((variant) => ({
+            name: `${crop.name} / ${variant.label}`,
+            canvas: variant.build(crop.canvas),
+          }))
+        );
+      }
+
+      async function readWithOcrSpace(canvas) {
+        const form = new FormData();
+        form.append('apikey', 'helloworld');
+        form.append('language', 'eng');
+        form.append('scale', 'true');
+        form.append('OCREngine', '3');
+        form.append('detectOrientation', 'true');
+        form.append('isOverlayRequired', 'false');
+        form.append('base64Image', `data:image/png;base64,${canvasToBase64(canvas)}`);
+
+        const res = await fetch('https://api.ocr.space/parse/image', {
+          method: 'POST',
+          body: form,
+        });
+        const json = await res.json();
+        if (json?.IsErroredOnProcessing) {
+          throw new Error(json?.ErrorMessage?.[0] || 'OCR.space no pudo procesar la imagen.');
+        }
+        const parsed = json?.ParsedResults?.[0]?.ParsedText || '';
+        return parsed.trim();
+      }
+
+      async function startCamera() {
+        if (stream) return;
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        });
+        video.srcObject = stream;
+        await video.play();
+        resizeCanvas();
+        statusEl.textContent = 'Cámara activa. Tocá "Capturar y leer" para sacar la foto.';
+      }
+
+      function stopCamera() {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          stream = null;
+        }
+        statusEl.textContent = 'Cámara detenida.';
+      }
+
+      function resizeCanvas() {
+        const rect = video.getBoundingClientRect();
+        overlay.width = rect.width * devicePixelRatio;
+        overlay.height = rect.height * devicePixelRatio;
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+      }
+
+      function drawBox(box) {
+        resizeCanvas();
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        if (!box) return;
+        ctx.strokeStyle = '#1f9d7a';
+        ctx.lineWidth = 4 * devicePixelRatio;
+        ctx.strokeRect(box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0);
+      }
+
+      async function analyzeFrame() {
+        if (!video.videoWidth) return;
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = video.videoWidth;
+        frameCanvas.height = video.videoHeight;
+        frameCanvas.getContext('2d').drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
+
+        const ocrCanvas = document.createElement('canvas');
+        const scale = 2;
+        ocrCanvas.width = frameCanvas.width * scale;
+        ocrCanvas.height = frameCanvas.height * scale;
+        ocrCanvas.getContext('2d').drawImage(frameCanvas, 0, 0, ocrCanvas.width, ocrCanvas.height);
+        await analyzeCapturedCanvas(ocrCanvas);
+      }
+
+      async function analyzeCapturedCanvas(canvas) {
+        const snapshot = new Image();
+        snapshot.src = canvas.toDataURL('image/png');
+        snapshot.alt = 'Foto capturada';
+        snapshot.style.width = '100%';
+        snapshot.style.display = 'block';
+        snapshot.style.borderRadius = '16px';
+        snapshot.style.marginBottom = '12px';
+
+        ocrEl.innerHTML = '';
+        ocrEl.appendChild(snapshot);
+        statusEl.textContent = 'Leyendo la foto capturada con varios recortes...';
+        try {
+          const attempts = makeOcrAttempts(canvas);
+          let bestRead = { raw: '', plate: '', score: 0, source: '' };
+
+          for (let i = 0; i < attempts.length; i += 1) {
+            const attempt = attempts[i];
+            statusEl.textContent = `Leyendo imagen ${i + 1}/${attempts.length}: ${attempt.name}...`;
+            const raw = await readWithOcrSpace(attempt.canvas).catch(() => '');
+            const candidate = extractPlate(raw);
+            if (candidate.score > bestRead.score || (!bestRead.raw && raw)) {
+              bestRead = {
+                raw,
+                plate: candidate.plate,
+                score: candidate.score,
+                source: attempt.name,
+              };
+            }
+            if (candidate.score >= 92) break;
+          }
+
+          const rawText = (bestRead.raw || 'Sin texto legible.').trim().replace(/\s+/g, ' ');
+          const textNode = document.createElement('div');
+          textNode.textContent = `${rawText}\n\nMejor intento: ${bestRead.source || 'sin coincidencia'} (${Math.round(bestRead.score)}%)`;
+          ocrEl.appendChild(textNode);
+
+          if (!bestRead.plate || bestRead.score < 76) {
+            plateEl.textContent = '---';
+            statusEl.textContent = 'OCR leído, pero no apareció una chapa clara con formato LLLNNNN.';
+            return;
+          }
+
+          lastPlate = bestRead.plate;
+          plateEl.textContent = bestRead.plate;
+          statusEl.innerHTML = `<span class="ok">Chapa detectada:</span> ${bestRead.plate}`;
+          await fetchOffenses(bestRead.plate);
+        } catch (err) {
+          statusEl.innerHTML = `<span class="err">No se pudo leer el OCR:</span> ${String(err.message || err)}`;
+        }
+      }
+
+      async function fetchTextWithTimeout(url, timeoutMs = 9000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, { mode: 'cors', signal: controller.signal });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return await res.text();
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      function decodeHtml(value = '') {
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = value;
+        return textarea.value;
+      }
+
+      function escapeHtml(value = '') {
+        const div = document.createElement('div');
+        div.textContent = value;
+        return div.innerHTML;
+      }
+
+      function textFromHtml(html) {
+        return decodeHtml(
+          html
+            .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+            .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+            .replace(/<[^>]+>/g, ' ')
+        )
+          .replace(/\$undefined/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function textFromNextPayload(html) {
+        const payloads = [...html.matchAll(/self\.__next_f\.push\(\[1,\s*"([\s\S]*?)"\]\)/g)]
+          .map((match) => {
+            try {
+              return JSON.parse(`"${match[1]}"`);
+            } catch {
+              return match[1]
+                .replace(/\\"/g, '"')
+                .replace(/\\n/g, ' ')
+                .replace(/\\\\/g, '\\');
+            }
+          })
+          .join(' ');
+        return textFromHtml(payloads);
+      }
+
+      function cleanFineLine(value = '') {
+        return value
+          .replace(/\s+/g, ' ')
+          .replace(/\s+([,.:;])/g, '$1')
+          .trim();
+      }
+
+      function parseOffenses(html, plate) {
+        const visibleText = textFromHtml(html);
+        const nextText = textFromNextPayload(html);
+        const combined = cleanFineLine(`${visibleText} ${nextText}`);
+
+        if (
+          /no (se encontraron|hay|registra|existen).{0,80}(infracciones|multas)/i.test(combined) ||
+          /sin (infracciones|multas)/i.test(combined)
+        ) {
+          return { hasOffenses: false, items: [] };
+        }
+
+        const amountPattern = /(?:\$|UYU|U\$S)\s*[\d.,]+|(?:UI|UR)\s*[\d.,]+/gi;
+        const amountMatches = [...combined.matchAll(amountPattern)];
+        const items = amountMatches
+          .map((match, index) => {
+            const start = Math.max(0, match.index - 220);
+            const end = Math.min(combined.length, match.index + match[0].length + 220);
+            let text = cleanFineLine(combined.slice(start, end));
+            const previousAmount = index > 0 ? amountMatches[index - 1][0] : '';
+            const nextAmount = amountMatches[index + 1]?.[0] || '';
+            if (previousAmount) text = cleanFineLine(text.split(previousAmount).pop() || text);
+            if (nextAmount) text = cleanFineLine(text.split(nextAmount).shift() || text);
+            text = text
+              .replace(new RegExp(`Infracciones para la matr[ií]cula ${plate} \\| ChapaUY`, 'gi'), '')
+              .replace(/ChapaUY - B[uú]squeda de Infracciones de Tr[aá]nsito/gi, '')
+              .replace(/Consult[aá] y analiz[aá] infracciones de tr[aá]nsito en Uruguay de forma transparente\.?/gi, '');
+            return {
+              amount: match[0],
+              text: cleanFineLine(text),
+            };
+          })
+          .filter((item, index, list) =>
+            item.text.length > 12 &&
+            list.findIndex((other) => other.amount === item.amount && other.text === item.text) === index
+          );
+
+        if (items.length > 0) {
+          return { hasOffenses: true, items };
+        }
+
+        return { hasOffenses: false, items: [] };
+      }
+
+      async function fetchOffenses(plate) {
+        offensesEl.innerHTML = '<div class="item">Consultando infracciones...</div>';
+        statusEl.textContent = 'Consultando infracciones...';
+        try {
+          const url = `https://chapa.uy/offenses?vehicle=${encodeURIComponent(plate)}`;
+          const proxyUrls = [
+            url,
+            `https://corsproxy.io/?${encodeURIComponent(url)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            `https://r.jina.ai/${url}`,
+          ];
+          let pageText = '';
+          let lastError = null;
+          for (const proxyUrl of proxyUrls) {
+            try {
+              pageText = await fetchTextWithTimeout(proxyUrl);
+              if (pageText && pageText.trim().length > 0) {
+                break;
+              }
+            } catch (err) {
+              lastError = err;
+            }
+          }
+          if (!pageText) throw lastError || new Error('No se pudo leer la página de infracciones por CORS.');
+          const parsed = parseOffenses(pageText, plate);
+          if (!parsed.hasOffenses) {
+            offensesEl.innerHTML = '<div class="item"><span class="ok">No hay multas registradas.</span></div>';
+            statusEl.textContent = `No hay multas registradas para ${plate}.`;
+            return;
+          }
+          offensesEl.innerHTML = parsed.items
+            .map((item, index) => `
+              <div class="item">
+                <strong>Multa ${index + 1}${item.amount ? ` - ${escapeHtml(item.amount)}` : ''}</strong>
+                <div class="fine-detail">${escapeHtml(item.text || 'Infracción detectada.')}</div>
+              </div>
+            `)
+            .join('');
+          statusEl.textContent = `Se encontraron ${parsed.items.length} multa(s) para ${plate}.`;
+        } catch (err) {
+          offensesEl.innerHTML = `<div class="item"><span class="err">No se pudo consultar el sitio.</span><br>${String(err.message || err)}</div>`;
+          statusEl.innerHTML = `<span class="err">No se pudo consultar infracciones:</span> ${String(err.message || err)}`;
+        }
+      }
+
+      startBtn.addEventListener('click', async () => {
+        try {
+          await startCamera();
+        } catch (err) {
+          statusEl.innerHTML = `<span class="err">Error al abrir la cámara:</span> ${String(err.message || err)}`;
+        }
+      });
+      captureBtn.addEventListener('click', analyzeFrame);
+      stopBtn.addEventListener('click', stopCamera);
+      window.addEventListener('resize', resizeCanvas);
+    </script>
+  </body>
+  </html>
