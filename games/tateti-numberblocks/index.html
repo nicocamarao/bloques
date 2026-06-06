@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tateti Numberblocks</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <a href="../../index.html"><strong>Bloques Arcade</strong></a>
+          <p>Tateti con Numberblocks como fichas</p>
+        </div>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../memory-clasico/index.html">Memory</a>
+          <a href="../copica-numberblocks/index.html">Copica</a>
+          <a href="../lombriz-numberblocks/index.html">Lombriz</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Duelo</p>
+          <h1>Tateti Numberblocks</h1>
+          <p>Dos jugadores, nueve casillas y fichas de Numberblocks para que la mesa se vea mas viva.</p>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span>Turno</span>
+            <strong id="turn">One</strong>
+          </div>
+          <div class="stat">
+            <span>Estado</span>
+            <strong id="status">Listo</strong>
+          </div>
+          <div class="stat">
+            <span>Guardado</span>
+            <strong id="save">Esperando cuenta</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="game">
+        <div class="board" id="board" aria-label="Tablero de tateti"></div>
+        <aside class="panel">
+          <div class="token">
+            <img src="https://static.wikia.nocookie.net/numberblocks/images/2/21/DiaOne.png/revision/latest/scale-to-width-down/112?cb=20250709141239" alt="One">
+            <div>
+              <strong>Jugador One</strong>
+              <p>Va con la ficha azul y arranca la partida.</p>
+            </div>
+          </div>
+          <div class="token">
+            <img src="https://static.wikia.nocookie.net/numberblocks/images/1/1f/DiaTwo.png/revision/latest/scale-to-width-down/112?cb=20250709141325" alt="Two">
+            <div>
+              <strong>Jugador Two</strong>
+              <p>Va con la ficha dorada y busca la diagonal o la fila.</p>
+            </div>
+          </div>
+          <div class="controls">
+            <button id="restart" type="button">Reiniciar</button>
+            <button id="swap" type="button">Cambiar inicio</button>
+          </div>
+          <p class="hint">Cada ronda intenta un patron distinto. El resultado queda en Firebase si hay usuario activo.</p>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

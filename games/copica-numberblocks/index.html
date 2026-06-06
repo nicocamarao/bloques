@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Copica Numberblocks</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <a href="../../index.html"><strong>Bloques Arcade</strong></a>
+          <p>Copica con secuencias de Numberblocks</p>
+        </div>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../memory-clasico/index.html">Memory</a>
+          <a href="../tateti-numberblocks/index.html">Tateti</a>
+          <a href="../lombriz-numberblocks/index.html">Lombriz</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Memoria</p>
+          <h1>Copica Numberblocks</h1>
+          <p>La secuencia crece paso a paso. Mirala, copiala y sostenela sin errar para llegar mas lejos.</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span>Ronda</span><strong id="round">0</strong></div>
+          <div class="stat"><span>Mejor</span><strong id="best">0</strong></div>
+          <div class="stat"><span>Estado</span><strong id="status">Listo</strong></div>
+        </div>
+      </section>
+
+      <section class="game">
+        <div class="stage">
+          <div class="sequence" id="sequence"></div>
+          <div class="pad" id="pad"></div>
+        </div>
+        <aside class="panel">
+          <div class="panel-card">
+            <strong>Como se juega</strong>
+            <p>Primero miras la luz, despues tocas los tiles en el mismo orden. Cada ronda agrega uno mas.</p>
+          </div>
+          <div class="panel-card">
+            <strong>Guardado</strong>
+            <p id="save">Esperando cuenta</p>
+          </div>
+          <div class="controls">
+            <button id="start" type="button">Empezar</button>
+            <button id="reset" type="button">Reiniciar</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

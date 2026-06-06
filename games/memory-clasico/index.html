@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Memory Clasico</title>
+    <link rel="stylesheet" href="../memory.css">
+  </head>
+  <body data-mode="classic">
+    <main class="shell">
+      <header class="top">
+        <div>
+          <a href="../../index.html"><strong>Bloques Arcade</strong></a>
+          <p>Memory con Numberblocks en pagina propia</p>
+        </div>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../memory-relampago/index.html">Memory Relampago</a>
+          <a href="../tateti-numberblocks/index.html">Tateti</a>
+          <a href="../copica-numberblocks/index.html">Copica</a>
+          <a href="../lombriz-numberblocks/index.html">Lombriz</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Numberblocks</p>
+          <h1 id="title">Memory Clasico</h1>
+          <p id="subtitle"></p>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <span id="summary">Parejas</span>
+            <strong id="live">0/12</strong>
+          </div>
+          <div class="stat">
+            <span>Puntaje</span>
+            <strong id="score">0 intentos</strong>
+          </div>
+          <div class="stat">
+            <span>Estado</span>
+            <strong id="status">Listo</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="board-shell">
+        <div class="toolbar">
+          <div class="footerline">
+            <span>Elegi dos tiles y busca la pareja.</span>
+            <span>Se guarda en Firebase si estas logueado.</span>
+          </div>
+          <div class="actions">
+            <button class="ghost" id="restart" type="button">Reiniciar</button>
+          </div>
+        </div>
+        <div id="grid" class="grid" aria-label="Tablero de memory"></div>
+      </section>
+    </main>
+    <script type="module" src="../memory-core.js"></script>
+  </body>
+</html>
