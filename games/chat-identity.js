@@ -98,6 +98,14 @@ function threadsRef() {
   return ref(db, "chat/direct");
 }
 
+function friendsRootRef() {
+  return ref(db, "chat/friends");
+}
+
+function requestsRootRef() {
+  return ref(db, "chat/friendRequests");
+}
+
 export function threadKeyForPair(first, second) {
   return [first, second].sort().join("__");
 }
@@ -185,6 +193,84 @@ async function renameDirectThreads(oldProfile, newProfile) {
   }
 }
 
+async function renameFriendships(oldProfile, newProfile) {
+  const [friendsSnap, requestsSnap] = await Promise.all([
+    get(friendsRootRef()),
+    get(requestsRootRef())
+  ]);
+
+  const updates = {};
+  const friends = friendsSnap.val() || {};
+  const requests = requestsSnap.val() || {};
+  const now = Date.now();
+
+  for (const [ownerNormalized, friendMap] of Object.entries(friends)) {
+    if (!friendMap) continue;
+
+    if (ownerNormalized === oldProfile.normalized) {
+      const renamedFriendMap = {};
+      for (const [friendNormalized, record] of Object.entries(friendMap)) {
+        if (!record) continue;
+        renamedFriendMap[friendNormalized] = {
+          ...record,
+          updatedAt: now
+        };
+      }
+      updates[`chat/friends/${newProfile.normalized}`] = renamedFriendMap;
+      updates[`chat/friends/${ownerNormalized}`] = null;
+      continue;
+    }
+
+    if (friendMap[oldProfile.normalized]) {
+      const nextMap = { ...friendMap };
+      nextMap[newProfile.normalized] = {
+        ...friendMap[oldProfile.normalized],
+        friendNormalized: newProfile.normalized,
+        friendNickname: newProfile.nickname,
+        updatedAt: now
+      };
+      delete nextMap[oldProfile.normalized];
+      updates[`chat/friends/${ownerNormalized}`] = nextMap;
+    }
+  }
+
+  for (const [targetNormalized, requestMap] of Object.entries(requests)) {
+    if (!requestMap) continue;
+
+    if (targetNormalized === oldProfile.normalized) {
+      const renamedRequestMap = {};
+      for (const [requesterNormalized, record] of Object.entries(requestMap)) {
+        if (!record) continue;
+        renamedRequestMap[requesterNormalized] = {
+          ...record,
+          targetNormalized: newProfile.normalized,
+          targetNickname: newProfile.nickname,
+          updatedAt: now
+        };
+      }
+      updates[`chat/friendRequests/${newProfile.normalized}`] = renamedRequestMap;
+      updates[`chat/friendRequests/${targetNormalized}`] = null;
+      continue;
+    }
+
+    if (requestMap[oldProfile.normalized]) {
+      const nextMap = { ...requestMap };
+      nextMap[newProfile.normalized] = {
+        ...requestMap[oldProfile.normalized],
+        requesterNormalized: newProfile.normalized,
+        requesterNickname: newProfile.nickname,
+        updatedAt: now
+      };
+      delete nextMap[oldProfile.normalized];
+      updates[`chat/friendRequests/${targetNormalized}`] = nextMap;
+    }
+  }
+
+  if (Object.keys(updates).length) {
+    await update(ref(db), updates);
+  }
+}
+
 export async function bootstrapNickname() {
   const clientId = getSessionClientId();
   const stored = getStoredNickname();
@@ -237,6 +323,10 @@ export async function changeNickname(nextNickname) {
 
   if (previous?.normalized) {
     await renameDirectThreads(
+      { ...previous, nickname: previous.nickname },
+      nextProfile
+    );
+    await renameFriendships(
       { ...previous, nickname: previous.nickname },
       nextProfile
     );
@@ -308,4 +398,89 @@ export async function pushDirectMessage(threadKey, messageId, message) {
   await update(ref(db, `chat/direct/${threadKey}`), {
     updatedAt: Date.now()
   });
+}
+
+function friendListRef(normalized) {
+  return ref(db, `chat/friends/${normalized}`);
+}
+
+function friendRequestsRef(normalized) {
+  return ref(db, `chat/friendRequests/${normalized}`);
+}
+
+export function watchFriends(normalized, callback) {
+  return onValue(friendListRef(normalized), (snapshot) => {
+    const friends = snapshot.val() || {};
+    callback(
+      Object.values(friends)
+        .filter(Boolean)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    );
+  });
+}
+
+export function watchFriendRequests(normalized, callback) {
+  return onValue(friendRequestsRef(normalized), (snapshot) => {
+    const requests = snapshot.val() || {};
+    callback(
+      Object.values(requests)
+        .filter(Boolean)
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    );
+  });
+}
+
+export async function sendFriendRequest(fromProfile, toProfile) {
+  if (!fromProfile?.normalized || !toProfile?.normalized) {
+    throw new Error("No se pudo preparar la solicitud.");
+  }
+  if (fromProfile.normalized === toProfile.normalized) {
+    throw new Error("No podés agregarte a vos mismo.");
+  }
+
+  const now = Date.now();
+  const payload = {
+    requesterNormalized: fromProfile.normalized,
+    requesterNickname: fromProfile.nickname,
+    targetNormalized: toProfile.normalized,
+    targetNickname: toProfile.nickname,
+    createdAt: now,
+    updatedAt: now,
+    status: "pending"
+  };
+
+  await set(ref(db, `chat/friendRequests/${toProfile.normalized}/${fromProfile.normalized}`), payload);
+  return payload;
+}
+
+export async function acceptFriendRequest(myProfile, request) {
+  if (!myProfile?.normalized || !request?.requesterNormalized) {
+    throw new Error("No se pudo aceptar la amistad.");
+  }
+
+  const requesterNormalized = request.requesterNormalized;
+  const requesterNickname = request.requesterNickname || requesterNormalized;
+  const now = Date.now();
+  const friendshipForMe = {
+    friendNormalized: requesterNormalized,
+    friendNickname: requesterNickname,
+    sinceAt: request.createdAt || now,
+    updatedAt: now,
+    status: "accepted"
+  };
+  const friendshipForThem = {
+    friendNormalized: myProfile.normalized,
+    friendNickname: myProfile.nickname,
+    sinceAt: request.createdAt || now,
+    updatedAt: now,
+    status: "accepted"
+  };
+
+  await update(ref(db), {
+    [`chat/friends/${myProfile.normalized}/${requesterNormalized}`]: friendshipForMe,
+    [`chat/friends/${requesterNormalized}/${myProfile.normalized}`]: friendshipForThem,
+    [`chat/friendRequests/${myProfile.normalized}/${requesterNormalized}`]: null,
+    [`chat/friendRequests/${requesterNormalized}/${myProfile.normalized}`]: null
+  });
+  return friendshipForMe;
 }

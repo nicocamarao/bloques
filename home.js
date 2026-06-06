@@ -1,9 +1,14 @@
-import { bootstrapNickname, watchPeople } from "./games/chat-identity.js";
+import { bootstrapNickname, watchFriends, watchPeople } from "./games/chat-identity.js";
 
 const homeNickEl = document.getElementById("home-nick");
 const homeStatusEl = document.getElementById("home-status");
 const onlineCountEl = document.getElementById("online-count");
 const rosterEl = document.getElementById("home-roster");
+const friendCountEl = document.getElementById("home-friend-count");
+const friendListEl = document.getElementById("home-friend-list");
+
+let currentFriends = [];
+let currentPeople = [];
 
 function renderRoster(people, currentNickname) {
   rosterEl.innerHTML = "";
@@ -25,12 +30,39 @@ function renderRoster(people, currentNickname) {
   });
 }
 
+function renderFriends() {
+  friendCountEl.textContent = String(currentFriends.length);
+  friendListEl.innerHTML = "";
+  const preview = currentFriends.slice(0, 3);
+
+  if (!preview.length) {
+    friendListEl.innerHTML = "<li><strong>Todavia no sumaste amigos</strong><span>tu lista va a aparecer aca</span></li>";
+    return;
+  }
+
+  preview.forEach((friend) => {
+    const livePerson = currentPeople.find((person) => person.normalized === friend.friendNormalized);
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${livePerson?.nickname || friend.friendNickname}</strong>
+      <span>${livePerson?.online ? "en linea" : "amigo guardado"}</span>
+    `;
+    friendListEl.appendChild(li);
+  });
+}
+
 const session = await bootstrapNickname();
 homeNickEl.textContent = session.nickname;
 homeStatusEl.textContent = "Sesion lista. Tu nick ya quedo reservado.";
 
 watchPeople((people) => {
+  currentPeople = people;
   const current = people.find((person) => person.normalized === session.normalized);
   onlineCountEl.textContent = `${people.length} personas`;
   renderRoster(people, current?.nickname || session.nickname);
+});
+
+watchFriends(session.normalized, (friends) => {
+  currentFriends = friends;
+  renderFriends();
 });
