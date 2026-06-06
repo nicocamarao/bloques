@@ -12,6 +12,7 @@ import {
 const CLIENT_KEY = "bloquesArcade.chatClientId";
 const NICK_KEY = "bloquesArcade.chatNickname";
 const NICK_NORMALIZED_KEY = "bloquesArcade.chatNicknameNormalized";
+const PHOTO_KEY = "bloquesArcade.chatPhotoDataUrl";
 
 const ADJECTIVES = [
   "Brisa",
@@ -74,16 +75,39 @@ export function randomNickname() {
 }
 
 export function getStoredNickname() {
+  const profile = getStoredProfile();
+  return profile ? { nickname: profile.nickname, normalized: profile.normalized } : null;
+}
+
+export function getStoredProfile() {
   const nickname = sessionStorage.getItem(NICK_KEY) || "";
   const normalized = sessionStorage.getItem(NICK_NORMALIZED_KEY) || normalizeNickname(nickname);
-  return nickname ? { nickname, normalized } : null;
+  const photoDataUrl = sessionStorage.getItem(PHOTO_KEY) || "";
+  return nickname ? { nickname, normalized, photoDataUrl } : null;
+}
+
+export function saveStoredProfile(profile) {
+  const nickname = displayNickname(profile?.nickname || "");
+  const normalized = normalizeNickname(nickname);
+  const photoDataUrl = profile?.photoDataUrl || "";
+  sessionStorage.setItem(NICK_KEY, nickname);
+  sessionStorage.setItem(NICK_NORMALIZED_KEY, normalized);
+  if (photoDataUrl) {
+    sessionStorage.setItem(PHOTO_KEY, photoDataUrl);
+  } else {
+    sessionStorage.removeItem(PHOTO_KEY);
+  }
+  return { nickname, normalized, photoDataUrl };
 }
 
 export function saveStoredNickname(nickname) {
-  const normalized = normalizeNickname(nickname);
-  sessionStorage.setItem(NICK_KEY, nickname);
-  sessionStorage.setItem(NICK_NORMALIZED_KEY, normalized);
-  return { nickname, normalized };
+  return saveStoredProfile({ nickname });
+}
+
+export function saveStoredPhotoDataUrl(photoDataUrl) {
+  const profile = getStoredProfile();
+  if (!profile) return null;
+  return saveStoredProfile({ ...profile, photoDataUrl });
 }
 
 function nicknameRef(normalized) {
@@ -170,6 +194,7 @@ async function renameDirectThreads(oldProfile, newProfile) {
         ...message,
         senderNormalized: message.senderNormalized === oldProfile.normalized ? newProfile.normalized : message.senderNormalized,
         sender: message.senderNormalized === oldProfile.normalized ? newProfile.nickname : message.sender,
+        senderPhotoDataUrl: message.senderNormalized === oldProfile.normalized ? (newProfile.photoDataUrl || "") : (message.senderPhotoDataUrl || ""),
       };
     }
 
@@ -179,7 +204,11 @@ async function renameDirectThreads(oldProfile, newProfile) {
       participants: (() => {
         const participants = { ...(thread.participants || {}) };
         delete participants[oldProfile.normalized];
-        participants[newProfile.normalized] = newProfile.nickname;
+        participants[newProfile.normalized] = {
+          nickname: newProfile.nickname,
+          photoDataUrl: newProfile.photoDataUrl || "",
+          normalized: newProfile.normalized
+        };
         return participants;
       })(),
       messages: remappedMessages,
@@ -213,6 +242,8 @@ async function renameFriendships(oldProfile, newProfile) {
         if (!record) continue;
         renamedFriendMap[friendNormalized] = {
           ...record,
+          ownerNickname: newProfile.nickname,
+          ownerPhotoDataUrl: newProfile.photoDataUrl || "",
           updatedAt: now
         };
       }
@@ -227,6 +258,7 @@ async function renameFriendships(oldProfile, newProfile) {
         ...friendMap[oldProfile.normalized],
         friendNormalized: newProfile.normalized,
         friendNickname: newProfile.nickname,
+        friendPhotoDataUrl: newProfile.photoDataUrl || "",
         updatedAt: now
       };
       delete nextMap[oldProfile.normalized];
@@ -245,6 +277,7 @@ async function renameFriendships(oldProfile, newProfile) {
           ...record,
           targetNormalized: newProfile.normalized,
           targetNickname: newProfile.nickname,
+          targetPhotoDataUrl: newProfile.photoDataUrl || "",
           updatedAt: now
         };
       }
@@ -259,11 +292,135 @@ async function renameFriendships(oldProfile, newProfile) {
         ...requestMap[oldProfile.normalized],
         requesterNormalized: newProfile.normalized,
         requesterNickname: newProfile.nickname,
+        requesterPhotoDataUrl: newProfile.photoDataUrl || "",
         updatedAt: now
       };
       delete nextMap[oldProfile.normalized];
       updates[`chat/friendRequests/${targetNormalized}`] = nextMap;
     }
+  }
+
+  if (Object.keys(updates).length) {
+    await update(ref(db), updates);
+  }
+}
+
+async function syncProfileReferences(profile) {
+  const [friendsSnap, requestsSnap, threadsSnap] = await Promise.all([
+    get(friendsRootRef()),
+    get(requestsRootRef()),
+    get(threadsRef())
+  ]);
+
+  const updates = {};
+  const friends = friendsSnap.val() || {};
+  const requests = requestsSnap.val() || {};
+  const threads = threadsSnap.val() || {};
+  const now = Date.now();
+
+  updates[`chat/people/${profile.normalized}`] = {
+    nickname: profile.nickname,
+    normalized: profile.normalized,
+    photoDataUrl: profile.photoDataUrl || "",
+    clientId: profile.clientId,
+    updatedAt: now,
+    lastSeenAt: now,
+    online: true
+  };
+  updates[`chat/nicknames/${profile.normalized}`] = {
+    nickname: profile.nickname,
+    normalized: profile.normalized,
+    photoDataUrl: profile.photoDataUrl || "",
+    clientId: profile.clientId,
+    updatedAt: now
+  };
+
+  for (const [ownerNormalized, friendMap] of Object.entries(friends)) {
+    if (!friendMap) continue;
+    if (ownerNormalized === profile.normalized) {
+      const nextMap = {};
+      for (const [friendNormalized, record] of Object.entries(friendMap)) {
+        if (!record) continue;
+        nextMap[friendNormalized] = {
+          ...record,
+          ownerNickname: profile.nickname,
+          ownerPhotoDataUrl: profile.photoDataUrl || "",
+          updatedAt: now
+        };
+      }
+      updates[`chat/friends/${ownerNormalized}`] = nextMap;
+      continue;
+    }
+
+    if (friendMap[profile.normalized]) {
+      const nextMap = { ...friendMap };
+      nextMap[profile.normalized] = {
+        ...friendMap[profile.normalized],
+        friendNickname: profile.nickname,
+        friendPhotoDataUrl: profile.photoDataUrl || "",
+        updatedAt: now
+      };
+      updates[`chat/friends/${ownerNormalized}`] = nextMap;
+    }
+  }
+
+  for (const [targetNormalized, requestMap] of Object.entries(requests)) {
+    if (!requestMap) continue;
+    if (targetNormalized === profile.normalized) {
+      const nextMap = {};
+      for (const [requesterNormalized, record] of Object.entries(requestMap)) {
+        if (!record) continue;
+        nextMap[requesterNormalized] = {
+          ...record,
+          targetNickname: profile.nickname,
+          targetPhotoDataUrl: profile.photoDataUrl || "",
+          updatedAt: now
+        };
+      }
+      updates[`chat/friendRequests/${targetNormalized}`] = nextMap;
+      continue;
+    }
+
+    if (requestMap[profile.normalized]) {
+      const nextMap = { ...requestMap };
+      nextMap[profile.normalized] = {
+        ...requestMap[profile.normalized],
+        requesterNickname: profile.nickname,
+        requesterPhotoDataUrl: profile.photoDataUrl || "",
+        updatedAt: now
+      };
+      updates[`chat/friendRequests/${targetNormalized}`] = nextMap;
+    }
+  }
+
+  for (const [threadKey, thread] of Object.entries(threads)) {
+    const participants = thread?.participantsNormalized || [];
+    if (!participants.includes(profile.normalized)) continue;
+
+    const nextParticipants = { ...(thread.participants || {}) };
+    nextParticipants[profile.normalized] = {
+      ...(nextParticipants[profile.normalized] || {}),
+      nickname: profile.nickname,
+      photoDataUrl: profile.photoDataUrl || "",
+      normalized: profile.normalized
+    };
+
+    const messages = thread?.messages || {};
+    const nextMessages = {};
+    for (const [messageId, message] of Object.entries(messages)) {
+      nextMessages[messageId] = {
+        ...message,
+        sender: message.senderNormalized === profile.normalized ? profile.nickname : message.sender,
+        senderPhotoDataUrl: message.senderNormalized === profile.normalized ? (profile.photoDataUrl || "") : (message.senderPhotoDataUrl || "")
+      };
+    }
+
+    updates[`chat/direct/${threadKey}`] = {
+      ...thread,
+      participants: nextParticipants,
+      messages: nextMessages,
+      updatedAt: now
+    };
   }
 
   if (Object.keys(updates).length) {
@@ -283,28 +440,33 @@ export async function bootstrapNickname() {
     const reservation = await reserveNickname(candidate, clientId);
     if (reservation.ok) {
       const normalized = reservation.normalized;
-      saveStoredNickname(candidate);
+      saveStoredProfile({ nickname: candidate, photoDataUrl: getStoredProfile()?.photoDataUrl || "" });
       await upsertProfile({
         nickname: candidate,
         normalized,
+        photoDataUrl: getStoredProfile()?.photoDataUrl || "",
         clientId,
         joinedAt: Date.now()
       });
-      return { nickname: candidate, normalized, clientId };
+      return { nickname: candidate, normalized, clientId, photoDataUrl: getStoredProfile()?.photoDataUrl || "" };
     }
   }
 }
 
-export async function changeNickname(nextNickname) {
+export async function changeNickname(nextNickname, options = {}) {
   const clientId = getSessionClientId();
   const next = displayNickname(nextNickname);
   const nextNormalized = normalizeNickname(next);
+  const photoDataUrl = options.photoDataUrl || getStoredProfile()?.photoDataUrl || "";
   if (!nextNormalized) {
     throw new Error("El nickname no puede quedar vacío.");
   }
 
   const current = getStoredNickname();
   if (current?.normalized === nextNormalized) {
+    if ((options.photoDataUrl || "") !== (current.photoDataUrl || "")) {
+      return updateProfilePhoto(options.photoDataUrl || "");
+    }
     return { nickname: next, normalized: nextNormalized, clientId };
   }
 
@@ -318,6 +480,7 @@ export async function changeNickname(nextNickname) {
     nickname: next,
     normalized: nextNormalized,
     clientId,
+    photoDataUrl,
     changedAt: Date.now()
   };
 
@@ -335,11 +498,46 @@ export async function changeNickname(nextNickname) {
   }
 
   saveStoredNickname(next);
+  saveStoredProfile({ nickname: next, photoDataUrl });
   await upsertProfile({
     nickname: next,
     normalized: nextNormalized,
+    photoDataUrl,
     clientId,
     changedAt: Date.now()
+  });
+  await syncProfileReferences({
+    nickname: next,
+    normalized: nextNormalized,
+    photoDataUrl,
+    clientId
+  });
+
+  return nextProfile;
+}
+
+export async function updateProfilePhoto(photoDataUrl) {
+  const current = getStoredProfile();
+  if (!current) {
+    throw new Error("No hay perfil activo.");
+  }
+
+  const nextProfile = {
+    ...current,
+    photoDataUrl: photoDataUrl || ""
+  };
+
+  saveStoredProfile(nextProfile);
+  await upsertProfile({
+    nickname: current.nickname,
+    normalized: current.normalized,
+    photoDataUrl: nextProfile.photoDataUrl,
+    clientId: getSessionClientId(),
+    photoUpdatedAt: Date.now()
+  });
+  await syncProfileReferences({
+    ...nextProfile,
+    clientId: getSessionClientId()
   });
 
   return nextProfile;
@@ -442,8 +640,10 @@ export async function sendFriendRequest(fromProfile, toProfile) {
   const payload = {
     requesterNormalized: fromProfile.normalized,
     requesterNickname: fromProfile.nickname,
+    requesterPhotoDataUrl: fromProfile.photoDataUrl || "",
     targetNormalized: toProfile.normalized,
     targetNickname: toProfile.nickname,
+    targetPhotoDataUrl: toProfile.photoDataUrl || "",
     createdAt: now,
     updatedAt: now,
     status: "pending"
@@ -460,10 +660,12 @@ export async function acceptFriendRequest(myProfile, request) {
 
   const requesterNormalized = request.requesterNormalized;
   const requesterNickname = request.requesterNickname || requesterNormalized;
+  const requesterPhotoDataUrl = request.requesterPhotoDataUrl || "";
   const now = Date.now();
   const friendshipForMe = {
     friendNormalized: requesterNormalized,
     friendNickname: requesterNickname,
+    friendPhotoDataUrl: requesterPhotoDataUrl,
     sinceAt: request.createdAt || now,
     updatedAt: now,
     status: "accepted"
@@ -471,6 +673,7 @@ export async function acceptFriendRequest(myProfile, request) {
   const friendshipForThem = {
     friendNormalized: myProfile.normalized,
     friendNickname: myProfile.nickname,
+    friendPhotoDataUrl: myProfile.photoDataUrl || "",
     sinceAt: request.createdAt || now,
     updatedAt: now,
     status: "accepted"

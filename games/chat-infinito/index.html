@@ -46,12 +46,26 @@
         <aside class="sidebar">
           <section class="panel">
             <div class="panel-head">
-              <p class="eyebrow">Nicknames</p>
-              <h2>Tu perfil</h2>
+              <p class="eyebrow">Perfil</p>
+              <h2>Editar perfil</h2>
             </div>
-            <form id="nickname-form" class="nickname-form">
-              <input id="nickname-input" placeholder="Escribe tu nickname" maxlength="24" autocomplete="off">
-              <button type="submit">Guardar nick</button>
+            <form id="profile-form" class="profile-form">
+              <div class="profile-preview">
+                <img id="profile-photo-preview" alt="Vista previa de tu foto" src="">
+                <div>
+                  <strong id="profile-name">Preparando...</strong>
+                  <span id="profile-summary">Tu perfil activo</span>
+                </div>
+              </div>
+              <label class="field">
+                <span>Nickname</span>
+                <input id="nickname-input" placeholder="Escribe tu nickname" maxlength="24" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Foto</span>
+                <input id="profile-photo-file" type="file" accept="image/*">
+              </label>
+              <button type="submit">Guardar perfil</button>
             </form>
             <p class="panel-copy" id="nickname-hint">Un nick unico se reserva para tu sesión actual.</p>
             <div class="panel-card">

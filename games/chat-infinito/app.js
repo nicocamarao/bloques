@@ -8,6 +8,7 @@ import {
   pushDirectMessage,
   sendFriendRequest,
   sendPresenceHeartbeat,
+  updateProfilePhoto,
   threadKeyForPair,
   watchFriendRequests,
   watchFriends,
@@ -40,6 +41,11 @@ const refreshThreadButton = document.getElementById("refresh-thread");
 const friendForm = document.getElementById("friend-form");
 const friendInput = document.getElementById("friend-input");
 const friendHintEl = document.getElementById("friend-hint");
+const profileForm = document.getElementById("profile-form");
+const profilePhotoFile = document.getElementById("profile-photo-file");
+const profilePhotoPreview = document.getElementById("profile-photo-preview");
+const profileNameEl = document.getElementById("profile-name");
+const profileSummaryEl = document.getElementById("profile-summary");
 
 let me = null;
 let people = [];
@@ -51,6 +57,7 @@ let messagesUnsubscribe = null;
 let friendsUnsubscribe = null;
 let requestsUnsubscribe = null;
 let threadMessages = [];
+let pendingPhotoDataUrl = "";
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
@@ -65,6 +72,57 @@ function escapeHtml(value) {
 function formatTime(timestamp) {
   if (!timestamp) return "ahora";
   return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function avatarFallback(name) {
+  const safeName = (name || "N").slice(0, 2).toUpperCase();
+  const hue = Array.from(String(name || "profile")).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="hsl(${hue},70%,58%)"/>
+          <stop offset="100%" stop-color="hsl(${(hue + 38) % 360},72%,46%)"/>
+        </linearGradient>
+      </defs>
+      <rect width="80" height="80" rx="22" fill="url(#g)"/>
+      <circle cx="40" cy="33" r="13" fill="rgba(255,255,255,0.22)"/>
+      <path d="M18 68c4-15 18-23 22-23s18 8 22 23" fill="rgba(255,255,255,0.18)"/>
+      <text x="40" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="white">${safeName}</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function avatarSource(person) {
+  return person?.photoDataUrl || avatarFallback(person?.nickname || "P");
+}
+
+async function fileToPhotoDataUrl(file) {
+  if (!file) return "";
+  const bitmap = await createImageBitmap(file);
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const scale = Math.max(size / bitmap.width, size / bitmap.height);
+  const drawWidth = bitmap.width * scale;
+  const drawHeight = bitmap.height * scale;
+  const dx = (size - drawWidth) / 2;
+  const dy = (size - drawHeight) / 2;
+  ctx.fillStyle = "#0b1220";
+  ctx.fillRect(0, 0, size, size);
+  ctx.drawImage(bitmap, dx, dy, drawWidth, drawHeight);
+  return canvas.toDataURL("image/jpeg", 0.86);
+}
+
+function syncProfileEditor() {
+  nicknameInput.value = me.nickname;
+  currentNickEl.textContent = me.nickname;
+  profileNameEl.textContent = me.nickname;
+  profileSummaryEl.textContent = `@${me.normalized}`;
+  const src = pendingPhotoDataUrl || me.photoDataUrl || avatarFallback(me.nickname);
+  profilePhotoPreview.src = src;
 }
 
 function personByNormalized(normalized) {
@@ -95,7 +153,7 @@ function renderMessages() {
     const item = document.createElement("article");
     item.className = `bubble${mine ? " mine" : ""}`;
     item.innerHTML = `
-      <strong>${escapeHtml(message.sender)}<span class="meta">${formatTime(message.createdAt)}</span></strong>
+      <strong><img class="avatar" src="${escapeHtml(message.senderPhotoDataUrl || avatarFallback(message.sender))}" alt="">${escapeHtml(message.sender)}<span class="meta">${formatTime(message.createdAt)}</span></strong>
       <p>${escapeHtml(message.text)}</p>
     `;
     messagesEl.appendChild(item);
@@ -113,11 +171,18 @@ function renderFriendsList() {
 
   friends.forEach((friend) => {
     const livePerson = personByNormalized(friend.friendNormalized);
+    const avatarPerson = livePerson || {
+      nickname: friend.friendNickname,
+      photoDataUrl: friend.friendPhotoDataUrl || ""
+    };
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
-        <strong>${escapeHtml(livePerson?.nickname || friend.friendNickname)}</strong>
-        <span>${livePerson?.online ? "en linea" : "amigo guardado"}</span>
+        <img class="avatar" src="${escapeHtml(avatarSource(avatarPerson))}" alt="">
+        <div class="person-meta">
+          <strong>${escapeHtml(livePerson?.nickname || friend.friendNickname)}</strong>
+          <span>${livePerson?.online ? "en linea" : "amigo guardado"}</span>
+        </div>
       </div>
       <button type="button">Chat</button>
     `;
@@ -145,8 +210,11 @@ function renderRequestsList() {
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
-        <strong>${escapeHtml(request.requesterNickname)}</strong>
-        <span>quiere agregarte</span>
+        <img class="avatar" src="${escapeHtml(request.requesterPhotoDataUrl || avatarFallback(request.requesterNickname))}" alt="">
+        <div class="person-meta">
+          <strong>${escapeHtml(request.requesterNickname)}</strong>
+          <span>quiere agregarte</span>
+        </div>
       </div>
       <button type="button">Aceptar</button>
     `;
@@ -178,8 +246,11 @@ function renderPeopleList() {
     const actionLabel = isFriend ? "Chat" : incoming ? "Aceptar" : "Agregar";
     li.innerHTML = `
       <div>
-        <strong>${escapeHtml(person.nickname)}</strong>
-        <span>${isFriend ? "amigo" : person.online ? "en linea" : "visto hace poco"}</span>
+        <img class="avatar" src="${escapeHtml(avatarSource(person))}" alt="">
+        <div class="person-meta">
+          <strong>${escapeHtml(person.nickname)}</strong>
+          <span>${isFriend ? "amigo" : person.online ? "en linea" : "visto hace poco"}</span>
+        </div>
       </div>
       <button type="button" data-action="${actionLabel.toLowerCase()}">${actionLabel}</button>
     `;
@@ -211,6 +282,9 @@ function updateThreadHeader() {
 function syncNicknameEditor() {
   nicknameInput.value = me.nickname;
   currentNickEl.textContent = me.nickname;
+  profileNameEl.textContent = me.nickname;
+  profileSummaryEl.textContent = `@${me.normalized}`;
+  profilePhotoPreview.src = pendingPhotoDataUrl || me.photoDataUrl || avatarFallback(me.nickname);
 }
 
 function bindMessages(threadKey) {
@@ -338,6 +412,7 @@ function wirePresence() {
 
 async function bootstrap() {
   me = await bootstrapNickname();
+  pendingPhotoDataUrl = me.photoDataUrl || "";
   syncNicknameEditor();
   statusEl.textContent = "Tu nick quedó reservado";
   nicknameHintEl.textContent = "Cambialo cuando quieras. Se guarda en esta sesión y también actualiza los hilos y amistades.";
@@ -348,16 +423,42 @@ async function bootstrap() {
   renderRequestsList();
 }
 
-nicknameForm.addEventListener("submit", async (event) => {
+profilePhotoFile.addEventListener("change", async () => {
+  const file = profilePhotoFile.files?.[0];
+  if (!file) return;
+  try {
+    pendingPhotoDataUrl = await fileToPhotoDataUrl(file);
+    syncNicknameEditor();
+    profileSummaryEl.textContent = "Foto lista para guardar";
+  } catch (error) {
+    statusEl.textContent = "No se pudo leer la foto.";
+  }
+});
+
+profileForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const nextNick = nicknameInput.value.trim();
-  if (!nextNick) return;
+  const nextPhoto = pendingPhotoDataUrl || me.photoDataUrl || "";
   try {
-    const updated = await changeNickname(nextNick);
-    me = { ...me, ...updated, nickname: updated.nickname, normalized: updated.normalized };
+    const nicknameChanged = Boolean(nextNick) && normalizeNickname(nextNick) !== me.normalized;
+    const photoChanged = nextPhoto !== (me.photoDataUrl || "");
+    if (!nicknameChanged && !photoChanged) {
+      statusEl.textContent = "No hay cambios para guardar.";
+      return;
+    }
+
+    let updated = me;
+    if (nicknameChanged) {
+      updated = await changeNickname(nextNick, { photoDataUrl: nextPhoto });
+    } else if (photoChanged) {
+      updated = await updateProfilePhoto(nextPhoto);
+    }
+
+    me = { ...me, ...updated, nickname: updated.nickname, normalized: updated.normalized, photoDataUrl: updated.photoDataUrl || "" };
+    pendingPhotoDataUrl = me.photoDataUrl || "";
     syncNicknameEditor();
-    statusEl.textContent = "Nickname actualizado";
-    nicknameHintEl.textContent = `Ahora sos ${updated.nickname}. Los chats y amistades se renombraron en la base.`;
+    statusEl.textContent = "Perfil actualizado";
+    nicknameHintEl.textContent = `Ahora sos ${updated.nickname}. Los chats, amistades y fotos quedaron sincronizados.`;
     bindRelationshipWatchers();
     if (selectedPeer) {
       const resolved = personByNormalized(selectedPeer.normalized)
@@ -368,7 +469,7 @@ nicknameForm.addEventListener("submit", async (event) => {
       }
     }
   } catch (error) {
-    statusEl.textContent = error.message || "No se pudo cambiar el nickname.";
+    statusEl.textContent = error.message || "No se pudo guardar el perfil.";
   }
 });
 

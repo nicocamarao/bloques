@@ -10,6 +10,23 @@ const friendListEl = document.getElementById("home-friend-list");
 let currentFriends = [];
 let currentPeople = [];
 
+function avatarFallback(name) {
+  const safeName = (name || "N").slice(0, 2).toUpperCase();
+  const hue = Array.from(String(name || "profile")).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="hsl(${hue},70%,58%)"/>
+          <stop offset="100%" stop-color="hsl(${(hue + 38) % 360},72%,46%)"/>
+        </linearGradient>
+      </defs>
+      <rect width="80" height="80" rx="22" fill="url(#g)"/>
+      <text x="40" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="white">${safeName}</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function renderRoster(people, currentNickname) {
   rosterEl.innerHTML = "";
   const visible = people.slice(0, 4);
@@ -23,8 +40,13 @@ function renderRoster(people, currentNickname) {
     const item = document.createElement("li");
     const isCurrent = person.nickname === currentNickname;
     item.innerHTML = `
-      <strong>${person.nickname}${isCurrent ? " (tu)" : ""}</strong>
-      <span>${isCurrent ? "sesion actual" : person.online ? "en linea" : "visto hace poco"}</span>
+      <div class="person-mini">
+        <img class="avatar" src="${person.photoDataUrl || avatarFallback(person.nickname)}" alt="">
+        <div>
+          <strong>${person.nickname}${isCurrent ? " (tu)" : ""}</strong>
+          <span>${isCurrent ? "sesion actual" : person.online ? "en linea" : "visto hace poco"}</span>
+        </div>
+      </div>
     `;
     rosterEl.appendChild(item);
   });
@@ -44,8 +66,13 @@ function renderFriends() {
     const livePerson = currentPeople.find((person) => person.normalized === friend.friendNormalized);
     const li = document.createElement("li");
     li.innerHTML = `
-      <strong>${livePerson?.nickname || friend.friendNickname}</strong>
-      <span>${livePerson?.online ? "en linea" : "amigo guardado"}</span>
+      <div class="person-mini">
+        <img class="avatar" src="${livePerson?.photoDataUrl || friend.friendPhotoDataUrl || avatarFallback(friend.friendNickname)}" alt="">
+        <div>
+          <strong>${livePerson?.nickname || friend.friendNickname}</strong>
+          <span>${livePerson?.online ? "en linea" : "amigo guardado"}</span>
+        </div>
+      </div>
     `;
     friendListEl.appendChild(li);
   });
