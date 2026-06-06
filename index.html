@@ -15,6 +15,10 @@
           <p>Juegos, comunidad y progreso en Firebase</p>
         </div>
       </div>
+      <div class="topbar-session">
+        <span>Tu nick</span>
+        <strong id="home-nick">Preparando...</strong>
+      </div>
       <nav class="topnav" aria-label="Juegos">
         <a href="./games/bloques/index.html">Bloques</a>
         <a href="./games/numberblocks-subida/index.html">Subida</a>
@@ -37,16 +41,20 @@
         <section class="panel-card">
           <p class="eyebrow">Comunidad</p>
           <h1>Tu sala</h1>
-          <p class="panel-copy">Por ahora esto es dummy, pero aca van amigos, actividad, y salas compartidas.</p>
+          <p id="home-status" class="panel-copy">Cargando tu sesion...</p>
+          <div class="panel-note">
+            <strong>Chat directo</strong>
+            <span>Buscá un nickname y abrí una conversacion privada.</span>
+          </div>
         </section>
 
         <section class="panel-card">
-          <p class="eyebrow">Amigos</p>
-          <ul class="mini-list">
-            <li><strong>Lua</strong><span>jugando Blocks</span></li>
-            <li><strong>Nico</strong><span>online</span></li>
-            <li><strong>Vale</strong><span>ganando Sum Quest</span></li>
-          </ul>
+          <p class="eyebrow">En linea</p>
+          <div class="panel-meta">
+            <strong id="online-count">0 personas</strong>
+            <span>Nicknames activos ahora mismo</span>
+          </div>
+          <ul id="home-roster" class="mini-list"></ul>
         </section>
 
         <section class="panel-card">
@@ -65,6 +73,11 @@
           <p class="eyebrow">Portada</p>
           <h2>Elegi un juego y abrilo en su propia pagina.</h2>
           <p>La portada queda liviana: sin frames, solo accesos directos, menu superior y el panel comunitario a la izquierda.</p>
+          <div class="hero-pills">
+            <span>Sesion persistente</span>
+            <span>Firebase Realtime</span>
+            <span>Juegos separados</span>
+          </div>
         </div>
 
         <section class="game-grid" aria-label="Juegos">
@@ -136,5 +149,6 @@
         </section>
       </section>
     </main>
+    <script type="module" src="./home.js"></script>
   </body>
 </html>

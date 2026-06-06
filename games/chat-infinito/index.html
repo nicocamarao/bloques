@@ -9,31 +9,83 @@
   <body>
     <main class="shell">
       <header class="top">
-        <a href="../../index.html">Bloques Arcade</a>
+        <div class="brand">
+          <a href="../../index.html"><strong>Bloques Arcade</strong></a>
+          <p>Mensajeria privada por nickname en Firebase</p>
+        </div>
+        <div class="session-chip">
+          <span>Tu nick</span>
+          <strong id="current-nick">Preparando...</strong>
+        </div>
         <nav>
           <a href="../bloques/index.html">Bloques</a>
           <a href="../pianito/index.html">Pianito</a>
           <a href="../jump-neon/index.html">Jump Neon</a>
         </nav>
       </header>
+
       <section class="hero">
         <div>
           <p class="eyebrow">Comunidad</p>
           <h1>Chat Infinito</h1>
-          <p>Mensajes persistidos en Firebase Realtime Database, sin cerrar la sala.</p>
+          <p>Elegis un nickname, ves a la gente conectada y abrís un chat directo con quien exista. Todo queda guardado en Firebase por nickname.</p>
         </div>
-        <div class="hud">
-          <strong id="status">Conectando...</strong>
-          <span id="count">0 mensajes</span>
+        <div class="stats">
+          <div class="stat">
+            <span>Personas</span>
+            <strong id="count">0</strong>
+          </div>
+          <div class="stat">
+            <span>Estado</span>
+            <strong id="status">Conectando...</strong>
+          </div>
         </div>
       </section>
-      <section class="chat-shell">
-        <div class="messages" id="messages"></div>
-        <form class="composer" id="composer">
-          <input id="name" placeholder="Nombre" maxlength="24" required>
-          <input id="message" placeholder="Escribi un mensaje..." maxlength="240" required>
-          <button type="submit">Enviar</button>
-        </form>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <section class="panel">
+            <div class="panel-head">
+              <p class="eyebrow">Nicknames</p>
+              <h2>Tu perfil</h2>
+            </div>
+            <form id="nickname-form" class="nickname-form">
+              <input id="nickname-input" placeholder="Escribe tu nickname" maxlength="24" autocomplete="off">
+              <button type="submit">Guardar nick</button>
+            </form>
+            <p class="panel-copy" id="nickname-hint">Un nick unico se reserva para tu sesión actual.</p>
+            <div class="panel-card">
+              <strong>Conversacion actual</strong>
+              <span id="current-peer">Nadie seleccionado</span>
+            </div>
+          </section>
+
+          <section class="panel roster-panel">
+            <div class="panel-head">
+              <p class="eyebrow">Personas</p>
+              <h2>En linea</h2>
+            </div>
+            <input id="search-peer" class="search" placeholder="Abrir chat por nickname">
+            <ul id="people-list" class="people-list"></ul>
+          </section>
+        </aside>
+
+        <section class="chat-panel">
+          <div class="chat-head">
+            <div>
+              <p class="eyebrow">Directo</p>
+              <h2 id="thread-title">Elegí alguien para empezar</h2>
+            </div>
+            <button id="refresh-thread" type="button">Actualizar</button>
+          </div>
+
+          <div class="thread" id="messages"></div>
+
+          <form class="composer" id="composer">
+            <input id="message" placeholder="Escribi un mensaje privado..." maxlength="240" required>
+            <button type="submit">Enviar</button>
+          </form>
+        </section>
       </section>
     </main>
     <script type="module" src="./app.js"></script>
