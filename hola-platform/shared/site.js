@@ -178,7 +178,7 @@ function renderSidebar() {
   slots.sidebar.innerHTML = `
     <section class="profile-panel">
       <div class="profile-preview">
-        <img id="profile-photo" alt="">
+        <img id="profile-photo" class="avatar" alt="">
         <div>
           <strong id="profile-nickname">Preparando...</strong>
           <span class="muted">Tu nick y foto se guardan en esta sesión y en Firebase.</span>
@@ -240,7 +240,7 @@ function renderProfileModal() {
             <button id="profile-close" type="button">Cerrar</button>
           </div>
           <div class="profile-preview">
-            <img id="profile-modal-avatar" alt="">
+            <img id="profile-modal-avatar" class="avatar" alt="">
             <div>
               <span class="pill">Avatar</span>
               <strong>Nickname y foto</strong>

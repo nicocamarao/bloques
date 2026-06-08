@@ -220,7 +220,7 @@ button, input, textarea, select { font: inherit; }
 
 .profile-preview {
   display: grid;
-  grid-template-columns: 50px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
@@ -230,10 +230,17 @@ button, input, textarea, select { font: inherit; }
 }
 
 .profile-preview img {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   object-fit: cover;
+}
+
+#profile-photo.avatar,
+#profile-modal-avatar.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
 }
 
 .profile-preview strong,
