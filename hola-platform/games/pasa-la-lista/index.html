@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pasa La Lista</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell attendance-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="attendance-page">
+          <header class="hero">
+            <div>
+              <p class="eyebrow">Asistencia con cámara</p>
+              <h1>Pasa La Lista</h1>
+              <p>Registras una selfie con tu nombre, el sistema guarda el rostro y luego compara cada foto nueva para decir quién vino y marcar el día.</p>
+            </div>
+            <div class="stats">
+              <div class="stat"><span>Guardados</span><strong id="saved-count">0</strong></div>
+              <div class="stat"><span>Asistencia hoy</span><strong id="today-count">0</strong></div>
+            </div>
+          </header>
+
+          <section class="workspace attendance-workspace">
+            <section class="panel camera-panel">
+              <div class="panel-head">
+                <p class="eyebrow">Cámara</p>
+                <h2 id="mode-title">Registrar rostro</h2>
+              </div>
+              <div class="camera-wrap">
+                <video id="camera" autoplay playsinline muted></video>
+                <canvas id="overlay"></canvas>
+              </div>
+              <div class="capture-row">
+                <button id="scan-button" type="button" class="primary">Sacar selfie</button>
+                <button id="switch-button" type="button">Cambiar modo</button>
+              </div>
+              <p class="status" id="status">Preparando cámara...</p>
+            </section>
+
+            <aside class="sidebar-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <p class="eyebrow">Registro</p>
+                  <h2>Nombre</h2>
+                </div>
+                <label class="field">
+                  <span>Nombre</span>
+                  <input id="name-input" maxlength="32" placeholder="Escribe el nombre">
+                </label>
+                <div class="preview-row">
+                  <img id="capture-preview" alt="Vista previa">
+                  <div>
+                    <strong id="capture-label">Sin foto</strong>
+                    <span id="match-label">Toca una selfie para empezar.</span>
+                  </div>
+                </div>
+                <button id="save-button" type="button" class="primary">Guardar rostro</button>
+              </section>
+
+              <section class="panel calendar-panel">
+                <div class="panel-head">
+                  <p class="eyebrow">Calendario</p>
+                  <h2>Quienes vinieron</h2>
+                </div>
+                <div class="calendar-toolbar">
+                  <button id="prev-month" type="button" aria-label="Mes anterior">←</button>
+                  <strong id="month-label"></strong>
+                  <button id="next-month" type="button" aria-label="Mes siguiente">→</button>
+                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
+                <ul id="day-list" class="day-list"></ul>
+              </section>
+            </aside>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" crossorigin="anonymous"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

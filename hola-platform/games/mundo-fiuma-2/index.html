@@ -16,9 +16,9 @@
         <section class="game-page fiuma2-page">
           <header class="game-hero">
             <div>
-              <p class="eyebrow">Mapa horizontal</p>
+              <p class="eyebrow">Torre vertical</p>
               <h1>Mundo Fiuma 2</h1>
-              <p>Un mapa tipo plataforma donde caminás, saltás, trepás y tocás personajes para abrir el chat lateral.</p>
+              <p>El mismo escenario de torre que Numberblocks Subida, con jugadores vivos, salto táctil y chat al tocar cada bloque.</p>
             </div>
             <div class="game-badges">
               <span class="pill" id="fiuma2-count">0 conectados</span>
@@ -28,12 +28,12 @@
           </header>
 
           <nav class="fiuma2-jumpbar" aria-label="Atajos del mundo">
-            <a href="#fiuma2-world">Mapa</a>
+            <a href="#fiuma2-stage">Torre</a>
             <a href="#fiuma2-controls">Mando</a>
-            <a href="#fiuma2-tip">Ayuda</a>
+            <a href="#chat-panel">Chat</a>
           </nav>
 
-          <section class="game-stage stack fiuma2-stack">
+          <section id="fiuma2-stage" class="game-stage stack fiuma2-stack">
             <div id="fiuma2-world" class="fiuma2-world">
               <canvas id="fiuma2-board" class="fiuma2-board" aria-label="Tablero de Mundo Fiuma 2"></canvas>
               <div id="fiuma2-popup" class="fiuma2-popup" hidden>
@@ -54,11 +54,11 @@
               <button type="button" data-move="left" aria-label="Izquierda">←</button>
               <button type="button" data-center aria-label="Centrar">◎</button>
               <button type="button" data-move="right" aria-label="Derecha">→</button>
-              <button type="button" data-move="down" aria-label="Abajo">↓</button>
+              <button type="button" data-reset aria-label="Reiniciar">↻</button>
             </div>
 
             <div id="fiuma2-tip" class="fiuma2-tip">
-              Toca un personaje para ver su tarjeta y abrir el chat lateral. En celular, usa los atajos de arriba para ir directo al mapa o al mando.
+              Toca un personaje para abrir su tarjeta. En celular, usa los atajos de arriba para saltar a la torre, al mando o al chat.
             </div>
           </section>
         </section>

@@ -194,43 +194,55 @@ function renderTop() {
 function renderSidebar() {
   if (!slots.sidebar) return;
   slots.sidebar.innerHTML = `
-    <section class="active-panel">
-      <div class="chat-head">
-        <div>
-          <span class="pill">Activos</span>
-          <strong id="live-count">0 activos</strong>
+    <section class="panel-block active-panel" data-panel-block>
+      <button class="panel-block-toggle" type="button" data-panel-toggle aria-expanded="true">
+        <div class="chat-head">
+          <div>
+            <span class="pill">Activos</span>
+            <strong id="live-count">0 activos</strong>
+          </div>
         </div>
-      </div>
-      <button class="pill" id="general-button" type="button">General</button>
-      <button class="pill" id="self-button" type="button">Contigo mismo</button>
-      <input id="people-search" class="chat-search" placeholder="Buscar nickname..." autocomplete="off">
-      <div class="contact-section">
-        <strong>Contactos fijados</strong>
-        <ul id="contacts-list" class="people-list"></ul>
-      </div>
-      <strong class="people-heading">Personas conectadas</strong>
-      <ul id="people-list" class="people-list"></ul>
-      <div class="recent-wrap">
-        <strong>Chats recientes</strong>
-        <ul id="recent-threads" class="people-list"></ul>
-        <strong>Ranking</strong>
-        <ul id="ranking-list" class="people-list"></ul>
+        <span class="panel-block-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="panel-block-body" data-panel-body>
+        <button class="pill" id="general-button" type="button">General</button>
+        <button class="pill" id="self-button" type="button">Contigo mismo</button>
+        <input id="people-search" class="chat-search" placeholder="Buscar nickname..." autocomplete="off">
+        <div class="contact-section">
+          <strong>Contactos fijados</strong>
+          <ul id="contacts-list" class="people-list"></ul>
+        </div>
+        <strong class="people-heading">Personas conectadas</strong>
+        <ul id="people-list" class="people-list"></ul>
+        <div class="recent-wrap">
+          <strong>Chats recientes</strong>
+          <ul id="recent-threads" class="people-list"></ul>
+        </div>
       </div>
     </section>
 
-    <section class="current-panel">
-      <div class="chat-head">
-        <div>
-          <span class="pill">Chat fijo</span>
-          <h2 id="conversation-title">General</h2>
+    <section class="panel-block current-panel" id="chat-panel" data-panel-block>
+      <button class="panel-block-toggle" type="button" data-panel-toggle aria-expanded="true">
+        <div class="chat-head">
+          <div>
+            <span class="pill">Chat fijo</span>
+            <h2 id="conversation-title">General</h2>
+          </div>
+          <span class="unread-badge" id="unread-count">0</span>
         </div>
-        <span class="unread-badge" id="unread-count">0</span>
+        <span class="panel-block-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="panel-block-body" data-panel-body>
+        <div class="recent-wrap">
+          <strong>Ranking</strong>
+          <ul id="ranking-list" class="people-list"></ul>
+        </div>
+        <div class="chat-messages" id="message-list"></div>
+        <form class="chat-composer" id="message-form">
+          <input id="message-input" placeholder="Escribe un mensaje..." maxlength="240" autocomplete="off">
+          <button type="submit">Enviar</button>
+        </form>
       </div>
-      <div class="chat-messages" id="message-list"></div>
-      <form class="chat-composer" id="message-form">
-        <input id="message-input" placeholder="Escribe un mensaje..." maxlength="240" autocomplete="off">
-        <button type="submit">Enviar</button>
-      </form>
     </section>
   `;
 }
@@ -301,6 +313,7 @@ function els() {
     generalButton: document.getElementById("general-button"),
     liveCount: document.getElementById("live-count"),
     presencePill: document.getElementById("presence-pill"),
+    panelToggles: Array.from(document.querySelectorAll("[data-panel-toggle]")),
   };
 }
 
@@ -548,6 +561,20 @@ function openConversation(conversation) {
     renderMessages();
     setPresenceHeartbeat(state.me).catch(() => {});
   });
+
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    const chatPanel = document.getElementById("chat-panel");
+    if (chatPanel) {
+      expandPanel(chatPanel, true);
+      window.requestAnimationFrame(() => {
+        chatPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+        window.requestAnimationFrame(() => document.getElementById("message-input")?.focus());
+      });
+      if (location.hash !== "#chat-panel") {
+        history.replaceState(null, "", "#chat-panel");
+      }
+    }
+  }
 }
 
 window.openPlatformConversation = openConversation;
@@ -654,6 +681,27 @@ function bindTopMenu() {
   });
 }
 
+function expandPanel(panel, open) {
+  const body = panel?.querySelector?.("[data-panel-body]");
+  const toggle = panel?.querySelector?.("[data-panel-toggle]");
+  if (!body || !toggle) return;
+  body.hidden = !open;
+  toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  panel.classList.toggle("collapsed", !open);
+}
+
+function bindCollapsibles() {
+  document.querySelectorAll("[data-panel-block]").forEach((panel) => {
+    const toggle = panel.querySelector("[data-panel-toggle]");
+    const body = panel.querySelector("[data-panel-body]");
+    if (!toggle || !body) return;
+    toggle.addEventListener("click", () => {
+      const open = toggle.getAttribute("aria-expanded") !== "true";
+      expandPanel(panel, open);
+    });
+  });
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -671,6 +719,7 @@ async function bootstrap() {
   bindModal();
   bindChat();
   bindTopMenu();
+  bindCollapsibles();
 
   state.me = await bootstrapProfile();
   syncProfileUI();

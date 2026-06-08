@@ -30,6 +30,13 @@
   gap: 16px;
 }
 
+.fiuma2-stack,
+.fiuma2-world,
+.fiuma2-controls,
+.fiuma2-tip {
+  scroll-margin-top: 126px;
+}
+
 .fiuma2-world {
   position: relative;
   border: 1px solid rgba(174, 190, 255, 0.16);
@@ -43,8 +50,8 @@
 .fiuma2-board {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 5.8;
-  min-height: 58vh;
+  aspect-ratio: 2 / 3;
+  min-height: 62vh;
   max-height: 78vh;
   touch-action: none;
   background:
@@ -116,11 +123,10 @@
   grid-template-areas:
     ". up ."
     "left center right"
-    ". down .";
+    ". reset .";
   gap: 8px;
   max-width: 380px;
   margin: 0 auto;
-  scroll-margin-top: 126px;
 }
 
 .fiuma2-controls button {
@@ -137,7 +143,7 @@
 .fiuma2-controls button[data-move="left"] { grid-area: left; }
 .fiuma2-controls button[data-center] { grid-area: center; background: rgba(99, 230, 190, 0.14); }
 .fiuma2-controls button[data-move="right"] { grid-area: right; }
-.fiuma2-controls button[data-move="down"] { grid-area: down; }
+.fiuma2-controls button[data-reset] { grid-area: reset; background: rgba(255, 209, 102, 0.16); }
 
 .fiuma2-tip {
   padding: 14px 16px;
@@ -146,7 +152,6 @@
   background: rgba(10, 16, 32, 0.82);
   color: #a7b3d9;
   line-height: 1.5;
-  scroll-margin-top: 126px;
 }
 
 @media (max-width: 900px) {
@@ -155,8 +160,8 @@
   }
 
   .fiuma2-board {
-    min-height: 54vh;
-    aspect-ratio: 4 / 6.2;
+    min-height: 58vh;
+    aspect-ratio: 2 / 3.2;
   }
 
   .fiuma2-popup {
@@ -166,14 +171,7 @@
 
   .fiuma2-controls {
     max-width: none;
-    position: sticky;
-    bottom: 12px;
-    z-index: 16;
     padding: 10px;
-    border-radius: 16px;
-    background: rgba(7, 12, 24, 0.82);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(174, 190, 255, 0.16);
   }
 
   .fiuma2-controls button {
