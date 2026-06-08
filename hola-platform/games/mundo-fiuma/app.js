@@ -8,6 +8,7 @@ import {
 } from "../../shared/social.js";
 
 const GRID = 12;
+const WORLD_SCENE = "mundo-fiuma";
 const board = document.getElementById("fiuma-board");
 const feed = document.getElementById("fiuma-feed");
 const form = document.getElementById("fiuma-form");
@@ -87,7 +88,7 @@ function personPosition(person) {
 }
 
 function setStatus() {
-  const active = state.people.filter((person) => person.online).length;
+  const active = state.people.filter((person) => person.online && (person.worldScene === WORLD_SCENE || person.sessionId === state.me?.sessionId)).length;
   if (countEl) countEl.textContent = `${active} conectados`;
   if (participantsEl) participantsEl.textContent = `${active} presentes`;
   if (mePosEl) mePosEl.textContent = `x:${state.mePos.x} y:${state.mePos.y}`;
@@ -121,7 +122,7 @@ function renderFeed() {
 function renderBoard() {
   if (!board) return;
   const cells = Array.from({ length: GRID * GRID }, () => `<div class="fiuma-cell"></div>`).join("");
-  const activePeople = state.people.filter((person) => person.online || person.sessionId === state.me?.sessionId);
+  const activePeople = state.people.filter((person) => (person.online || person.sessionId === state.me?.sessionId) && (person.worldScene === WORLD_SCENE || person.sessionId === state.me?.sessionId));
   const occupied = new Map();
 
   const players = activePeople.map((person) => {
@@ -176,6 +177,7 @@ async function syncWorldPosition(nextPos) {
   state.positionInitialized = true;
   await setPresenceHeartbeat(state.me, {
     path: location.pathname,
+    worldScene: WORLD_SCENE,
     worldX: state.mePos.x,
     worldY: state.mePos.y,
     worldUpdatedAt: Date.now(),
@@ -206,7 +208,7 @@ function renderButtons() {
 }
 
 function updatePositionFromPeople() {
-  const liveMe = state.people.find((person) => person.sessionId === state.me?.sessionId);
+  const liveMe = state.people.find((person) => person.sessionId === state.me?.sessionId || (person.worldScene === WORLD_SCENE && person.sessionId === state.me?.sessionId));
   if (!liveMe) return;
   if (Number.isFinite(liveMe.worldX) && Number.isFinite(liveMe.worldY) && liveMe.worldX >= 0 && liveMe.worldY >= 0 && !state.positionInitialized) {
     state.mePos = { x: clamp(liveMe.worldX), y: clamp(liveMe.worldY) };
@@ -279,12 +281,19 @@ async function bootstrap() {
       setPresenceHeartbeat(state.me, {
         online: false,
         path: location.pathname,
+        worldScene: WORLD_SCENE,
         worldX: state.mePos.x,
         worldY: state.mePos.y,
         worldUpdatedAt: Date.now(),
       }).catch(() => {});
     }
   });
+
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    window.requestAnimationFrame(() => {
+      document.getElementById("fiuma-world")?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }
 }
 
 bootstrap().catch((error) => {

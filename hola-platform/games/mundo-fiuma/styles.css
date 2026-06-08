@@ -2,6 +2,30 @@
   gap: 18px;
 }
 
+.fiuma-jumpbar {
+  display: none;
+  gap: 8px;
+  position: sticky;
+  top: 92px;
+  z-index: 5;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(10, 16, 32, 0.82);
+  backdrop-filter: blur(14px);
+}
+
+.fiuma-jumpbar a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 168, 255, 0.16);
+  background: rgba(255,255,255,0.03);
+  font-weight: 800;
+}
+
 .fiuma-stack {
   gap: 16px;
 }
@@ -12,6 +36,7 @@
   background: rgba(10, 16, 32, 0.88);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
   overflow: hidden;
+  scroll-margin-top: 126px;
 }
 
 .fiuma-board {
@@ -117,6 +142,7 @@
   gap: 8px;
   max-width: 360px;
   margin: 0 auto;
+  scroll-margin-top: 126px;
 }
 
 .fiuma-controls button {
@@ -142,6 +168,7 @@
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
   display: grid;
   gap: 12px;
+  scroll-margin-top: 126px;
 }
 
 .fiuma-feed {
@@ -201,6 +228,10 @@
 }
 
 @media (max-width: 900px) {
+  .fiuma-jumpbar {
+    display: flex;
+  }
+
   .fiuma-controls {
     max-width: none;
   }

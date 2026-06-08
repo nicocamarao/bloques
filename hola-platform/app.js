@@ -27,6 +27,17 @@ const games = [
     preview: { kind: "emoji", value: "🌍" },
   },
   {
+    id: "mundo-fiuma-2",
+    title: "Mundo Fiuma 2",
+    href: "./games/mundo-fiuma-2/index.html",
+    description: "Un mapa horizontal tipo plataforma para encontrarte con otros y abrir chat al instante.",
+    kind: "symbol",
+    symbol: "🧍",
+    accent: "mundo",
+    category: "Mundo",
+    preview: { kind: "emoji", value: "🧍" },
+  },
+  {
     id: "mundo-numberblocks",
     title: "Mundo Numberblocks",
     href: "./games/mundo-numberblocks/index.html",
@@ -250,6 +261,7 @@ function renderHome() {
         <div class="hero-actions">
           <a class="game-action" href="./games/mini-territorio/index.html">Mini territorio</a>
           <a class="game-action" href="./games/mundo-fiuma/index.html">Mundo Fiuma</a>
+          <a class="game-action" href="./games/mundo-fiuma-2/index.html">Mundo Fiuma 2</a>
           <a class="game-action" href="./games/mundo-numberblocks/index.html">Mundo Numberblocks</a>
         </div>
       </div>

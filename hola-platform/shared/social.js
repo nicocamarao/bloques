@@ -417,6 +417,7 @@ function buildPeopleFromSnapshot(snapshotValue, meSessionId) {
       currentPath: person.currentPath || "",
       worldX: Number(person.worldX ?? -1),
       worldY: Number(person.worldY ?? -1),
+      worldScene: person.worldScene || "",
       worldUpdatedAt: Number(person.worldUpdatedAt || 0),
       online: Number(person.onlineUntil || 0) > now(),
     }))

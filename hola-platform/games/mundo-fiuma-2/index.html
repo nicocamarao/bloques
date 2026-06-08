@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mundo Fiuma 2</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page fiuma2-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Mapa horizontal</p>
+              <h1>Mundo Fiuma 2</h1>
+              <p>Un mapa tipo plataforma donde caminás, saltás, trepás y tocás personajes para abrir el chat lateral.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="fiuma2-count">0 conectados</span>
+              <span class="pill" id="fiuma2-pos">x:0 y:0</span>
+              <span class="pill" id="fiuma2-selected">Nadie seleccionado</span>
+            </div>
+          </header>
+
+          <nav class="fiuma2-jumpbar" aria-label="Atajos del mundo">
+            <a href="#fiuma2-world">Mapa</a>
+            <a href="#fiuma2-controls">Mando</a>
+            <a href="#fiuma2-tip">Ayuda</a>
+          </nav>
+
+          <section class="game-stage stack fiuma2-stack">
+            <div id="fiuma2-world" class="fiuma2-world">
+              <canvas id="fiuma2-board" class="fiuma2-board" aria-label="Tablero de Mundo Fiuma 2"></canvas>
+              <div id="fiuma2-popup" class="fiuma2-popup" hidden>
+                <button id="fiuma2-popup-close" class="fiuma2-popup-close" type="button" aria-label="Cerrar">×</button>
+                <div class="fiuma2-popup-head">
+                  <img id="fiuma2-popup-avatar" class="avatar" alt="">
+                  <div>
+                    <strong id="fiuma2-popup-name">Jugador</strong>
+                    <span id="fiuma2-popup-meta" class="muted">En línea</span>
+                  </div>
+                </div>
+                <button id="fiuma2-popup-chat" type="button">Chatear</button>
+              </div>
+            </div>
+
+            <div id="fiuma2-controls" class="fiuma2-controls" aria-label="Movimiento">
+              <button type="button" data-move="up" aria-label="Arriba">↑</button>
+              <button type="button" data-move="left" aria-label="Izquierda">←</button>
+              <button type="button" data-center aria-label="Centrar">◎</button>
+              <button type="button" data-move="right" aria-label="Derecha">→</button>
+              <button type="button" data-move="down" aria-label="Abajo">↓</button>
+            </div>
+
+            <div id="fiuma2-tip" class="fiuma2-tip">
+              Toca un personaje para ver su tarjeta y abrir el chat lateral. En celular, usa los atajos de arriba para ir directo al mapa o al mando.
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

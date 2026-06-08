@@ -1,0 +1,182 @@
+.fiuma2-page {
+  gap: 18px;
+}
+
+.fiuma2-jumpbar {
+  display: none;
+  gap: 8px;
+  position: sticky;
+  top: 92px;
+  z-index: 5;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(10, 16, 32, 0.82);
+  backdrop-filter: blur(14px);
+}
+
+.fiuma2-jumpbar a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 168, 255, 0.16);
+  background: rgba(255,255,255,0.03);
+  font-weight: 800;
+}
+
+.fiuma2-stack {
+  gap: 16px;
+}
+
+.fiuma2-world {
+  position: relative;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(10, 16, 32, 0.88);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  scroll-margin-top: 126px;
+}
+
+.fiuma2-board {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7.6;
+  min-height: 52vh;
+  max-height: 70vh;
+  touch-action: none;
+  background:
+    linear-gradient(180deg, rgba(124, 168, 255, 0.08), rgba(99, 230, 190, 0.04)),
+    linear-gradient(180deg, #182442 0%, #050816 100%);
+}
+
+.fiuma2-popup {
+  position: absolute;
+  z-index: 8;
+  min-width: 200px;
+  max-width: 260px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(10, 16, 32, 0.95);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  transform: translate(-50%, -100%);
+  display: grid;
+  gap: 10px;
+}
+
+.fiuma2-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fiuma2-popup-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.fiuma2-popup .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.fiuma2-popup strong,
+.fiuma2-popup span {
+  display: block;
+}
+
+.fiuma2-popup button:not(.fiuma2-popup-close) {
+  border: 1px solid rgba(124, 168, 255, 0.24);
+  background: linear-gradient(180deg, rgba(124, 168, 255, 0.22), rgba(124, 168, 255, 0.10));
+  color: #f9fbff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fiuma2-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    ". up ."
+    "left center right"
+    ". down .";
+  gap: 8px;
+  max-width: 380px;
+  margin: 0 auto;
+  scroll-margin-top: 126px;
+}
+
+.fiuma2-controls button {
+  min-height: 54px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 168, 255, 0.22);
+  background: rgba(255,255,255,0.04);
+  color: #f5f7ff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.fiuma2-controls button[data-move="up"] { grid-area: up; }
+.fiuma2-controls button[data-move="left"] { grid-area: left; }
+.fiuma2-controls button[data-center] { grid-area: center; background: rgba(99, 230, 190, 0.14); }
+.fiuma2-controls button[data-move="right"] { grid-area: right; }
+.fiuma2-controls button[data-move="down"] { grid-area: down; }
+
+.fiuma2-tip {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(10, 16, 32, 0.82);
+  color: #a7b3d9;
+  line-height: 1.5;
+  scroll-margin-top: 126px;
+}
+
+@media (max-width: 900px) {
+  .fiuma2-jumpbar {
+    display: flex;
+  }
+
+  .fiuma2-board {
+    min-height: 42vh;
+    aspect-ratio: 16 / 8.8;
+  }
+
+  .fiuma2-popup {
+    min-width: 170px;
+    max-width: 220px;
+  }
+
+  .fiuma2-controls {
+    max-width: none;
+    position: sticky;
+    bottom: 12px;
+    z-index: 16;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(7, 12, 24, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(174, 190, 255, 0.16);
+  }
+
+  .fiuma2-controls button {
+    min-height: 58px;
+  }
+}
