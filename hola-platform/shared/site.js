@@ -165,7 +165,7 @@ function renderTop() {
         <img id="profile-chip-avatar" class="avatar" alt="">
         <span>
           <strong id="profile-chip-name">Jugador</strong>
-          <small><i class="fa-solid fa-pen"></i><span>Editar perfil</span></small>
+          <small><i class="fa-solid fa-pen"></i></small>
         </span>
       </button>
       <div class="site-brand">
