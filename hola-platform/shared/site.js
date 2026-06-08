@@ -303,22 +303,41 @@ function renderPeople() {
 
   const currentSessionId = state.currentConversation?.peer?.sessionId || state.currentConversation?.sessionId || "";
   peopleList.innerHTML = "";
-  sorted.filter((person) => !query || person.nickname.toLowerCase().includes(query)).forEach((person) => {
-    if (person.sessionId === state.me?.sessionId) return;
+
+  if (state.me) {
     const li = document.createElement("li");
-    li.className = currentSessionId === person.sessionId ? "current" : "";
+    li.className = state.currentConversation?.kind === "self" ? "current" : "";
     li.innerHTML = `
       <button type="button" class="person">
-        <img class="avatar" src="${avatarSource(person)}" alt="">
+        <img class="avatar" src="${avatarSource(state.me)}" alt="">
         <span>
-          <strong>${person.nickname}</strong>
-          <span>${person.online ? "en línea" : "visto hace poco"}</span>
+          <strong>${state.me.nickname}</strong>
+          <span>Tú · chat contigo mismo</span>
         </span>
       </button>
     `;
-    li.querySelector("button").addEventListener("click", () => openConversation({ kind: "direct", peer: person }));
+    li.querySelector("button").addEventListener("click", () => openConversation({ kind: "self" }));
     peopleList.appendChild(li);
-  });
+  }
+
+  sorted
+    .filter((person) => person.sessionId !== state.me?.sessionId)
+    .filter((person) => !query || person.nickname.toLowerCase().includes(query))
+    .forEach((person) => {
+      const li = document.createElement("li");
+      li.className = currentSessionId === person.sessionId ? "current" : "";
+      li.innerHTML = `
+        <button type="button" class="person">
+          <img class="avatar" src="${avatarSource(person)}" alt="">
+          <span>
+            <strong>${person.nickname}</strong>
+            <span>${person.online ? "en línea" : "visto hace poco"}</span>
+          </span>
+        </button>
+      `;
+      li.querySelector("button").addEventListener("click", () => openConversation({ kind: "direct", peer: person }));
+      peopleList.appendChild(li);
+    });
 }
 
 function mergeProfileForRecent(thread) {
