@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Torre Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Construcción</p>
+              <h1>Torre Numberblocks</h1>
+              <p>Apila Numberblocks hasta completar las tres torres exactas. Si te pasas, la torre cae.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="score-pill">Torres: 0/3</span>
+              <span class="pill" id="next-pill">Siguiente: 1</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <span class="pill">Objetivos: 6, 8, 10</span>
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+            </div>
+            <div id="board" class="game-board grid-3"></div>
+            <div class="game-note" id="status">Toca una torre para dejar el bloque actual.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const board = document.getElementById("board");
+      const scorePill = document.getElementById("score-pill");
+      const nextPill = document.getElementById("next-pill");
+      const status = document.getElementById("status");
+      const resetButton = document.getElementById("reset-button");
+      const targets = [6, 8, 10];
+      let towers;
+      let currentValue;
+      let score;
+      let done;
+
+      function randomBlock() {
+        return 1 + Math.floor(Math.random() * 4);
+      }
+
+      function reset() {
+        towers = targets.map(() => []);
+        currentValue = randomBlock();
+        score = 0;
+        done = false;
+        render();
+      }
+
+      function towerSum(index) {
+        return towers[index].reduce((sum, value) => sum + value, 0);
+      }
+
+      function towerDone(index) {
+        return towerSum(index) === targets[index];
+      }
+
+      async function place(index) {
+        if (done || towerDone(index)) return;
+        const next = towerSum(index) + currentValue;
+        if (next > targets[index]) {
+          towers[index] = [];
+          status.textContent = "La torre se cayó. Vuelve a intentarlo.";
+        } else {
+          towers[index].push(currentValue);
+          status.textContent = next === targets[index] ? "Torre completa." : "Sigue apilando.";
+        }
+        score = towers.filter((_, i) => towerDone(i)).length * 100 + towers.reduce((sum, col) => sum + col.reduce((a, b) => a + b, 0), 0);
+        currentValue = randomBlock();
+        if (targets.every((_, i) => towerDone(i))) {
+          done = true;
+          status.textContent = "¡Torres completas!";
+          await recordScore("torre-numberblocks", score + 300, { label: "Torre Numberblocks" });
+        } else {
+          await recordScore("torre-numberblocks", score, { label: "Torre Numberblocks" });
+        }
+        render();
+      }
+
+      function render() {
+        board.innerHTML = "";
+        targets.forEach((target, index) => {
+          const button = document.createElement("button");
+          button.className = "tile fill";
+          const sum = towerSum(index);
+          const stack = towers[index].map((value) => `<img src="${blockForNumber(value).src}" alt="${value}">`).join("");
+          button.innerHTML = `
+            <div style="display:grid;gap:8px;justify-items:center">
+              <strong style="font-size:16px">${sum}/${target}</strong>
+              <div style="display:grid;grid-template-rows:repeat(${target}, 1fr);gap:4px;width:100%;min-height:180px">
+                ${stack || '<span class="muted" style="align-self:center">Vacía</span>'}
+              </div>
+            </div>
+          `;
+          button.addEventListener("click", () => place(index));
+          board.appendChild(button);
+        });
+        scorePill.textContent = `Torres: ${targets.filter((_, i) => towerDone(i)).length}/3`;
+        nextPill.textContent = `Siguiente: ${currentValue}`;
+      }
+
+      resetButton.addEventListener("click", reset);
+      reset();
+    </script>
+  </body>
+</html>

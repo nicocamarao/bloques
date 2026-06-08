@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Numberblocks Subida</title>
+  <link rel="stylesheet" href="../../shared/site.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --fondo: #050816;
+      --panel: rgba(10, 16, 32, 0.86);
+      --panel-borde: rgba(133, 171, 255, 0.2);
+      --texto: #f5f7ff;
+      --muted: #aab5d6;
+      --acento: #ffd166;
+      --acento-2: #7fe7c4;
+      --peligro: #ff7a90;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(74, 118, 255, 0.20), transparent 35%),
+        radial-gradient(circle at 20% 10%, rgba(255, 209, 102, 0.10), transparent 20%),
+        linear-gradient(180deg, #04050c 0%, #07101f 50%, #020309 100%);
+      color: var(--texto);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 112px 20px 20px;
+    }
+
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      margin-left: calc(var(--sidebar-w) + 36px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    #site-sidebar {
+      position: fixed;
+      inset: 92px auto 20px 16px;
+      width: var(--sidebar-w);
+      z-index: 18;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-borde);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(14px);
+    }
+
+    .cabecera {
+      padding: 18px 20px 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 48px);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitulo {
+      margin: 10px 0 0;
+      color: var(--muted);
+      max-width: 54ch;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .etiquetas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: var(--texto);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 13px;
+    }
+
+    .escenario {
+      padding: 0 16px 16px;
+    }
+
+    .lienzo-wrap {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, #09111f 0%, #03050b 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 78vh;
+      touch-action: none;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(127, 231, 196, 0.12), transparent 18%),
+        linear-gradient(180deg, #08111d 0%, #04050c 100%);
+    }
+
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      justify-content: space-between;
+      padding: 14px;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .hud .caja {
+      background: rgba(6, 9, 20, 0.65);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-width: 116px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+    }
+
+    .hud .titulo {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+    }
+
+    .hud .valor {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .lateral {
+      padding: 16px;
+    }
+
+    .bloque-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini-vista {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .mini-vista img {
+      width: 84px;
+      height: 84px;
+      object-fit: contain;
+    }
+
+    .mini-vista strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .mini-vista p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .sub {
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .tarjeta {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .tarjeta h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .tarjeta p, .tarjeta li {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .controles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .boton {
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      color: var(--texto);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+    }
+
+    .boton:active {
+      transform: translateY(1px);
+    }
+
+    .boton.acento {
+      background: linear-gradient(180deg, rgba(255, 209, 102, 0.24), rgba(255, 209, 102, 0.12));
+      border-color: rgba(255, 209, 102, 0.26);
+      color: #fff7d7;
+    }
+
+    .mensaje {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.22);
+      color: var(--texto);
+      min-height: 52px;
+      line-height: 1.45;
+    }
+
+    .mensaje.ganaste {
+      border-color: rgba(127, 231, 196, 0.35);
+      box-shadow: 0 0 0 1px rgba(127, 231, 196, 0.10) inset;
+    }
+
+    .movil {
+      display: none;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding-top: 124px;
+      }
+
+      #site-sidebar {
+        position: static;
+        width: auto;
+        inset: auto;
+        margin-bottom: 16px;
+      }
+
+      .app {
+        margin-left: 0;
+        grid-template-columns: 1fr;
+      }
+
+      .movil {
+        display: grid;
+        position: sticky;
+        bottom: 12px;
+        z-index: 20;
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 16px;
+        background: rgba(7, 12, 24, 0.82);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(174, 190, 255, 0.16);
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .movil .boton {
+        min-height: 58px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-top"></div>
+  <aside id="site-sidebar" class="site-sidebar"></aside>
+  <main class="app">
+    <section class="panel escenario">
+      <div class="cabecera">
+        <h1>Numberblocks Subida</h1>
+        <p class="subtitulo">
+          Un juego 2D táctil: saltas entre pisos, vas juntando Numberblocks y la suma se va armando sola
+          hasta llegar a <strong>100</strong>. Si llegas exacto, ganaste.
+        </p>
+        <div class="etiquetas">
+          <span class="chip">Jugador: 1</span>
+          <span class="chip">Meta: 100</span>
+          <span class="chip">Assets reales de Numberblocks</span>
+          <span class="chip">Click y toque</span>
+        </div>
+      </div>
+
+      <div class="lienzo-wrap">
+        <canvas id="juego" width="480" height="720" aria-label="Juego Numberblocks"></canvas>
+        <div class="hud">
+          <div class="caja">
+            <span class="titulo">Suma</span>
+            <div class="valor" id="hudSuma">1</div>
+          </div>
+          <div class="caja" style="text-align:right">
+            <span class="titulo">Siguiente</span>
+            <div class="valor" id="hudSiguiente">+2</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel lateral">
+      <div class="bloque-panel">
+        <div class="mini-vista">
+          <img id="vistaJugadorActual" alt="Bloque actual">
+          <div>
+            <span class="sub">Jugador actual</span>
+            <strong id="textoJugadorActual">1 - One</strong>
+            <p>Este es el bloque que llevas ahora mismo mientras subes.</p>
+          </div>
+        </div>
+
+        <div class="mini-vista">
+          <img id="vistaSiguienteBloque" alt="Siguiente bloque">
+          <div>
+            <span class="sub">Siguiente bloque</span>
+            <strong id="textoSiguienteBloque">2 - Two</strong>
+            <p>Cuando lo toques, se suma y el jugador cambia de sprite.</p>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <h2>Cómo se juega</h2>
+          <p>
+            Mueve con toque o botones táctiles. En móvil puedes jugar completo sin teclado.
+          </p>
+          <ul>
+            <li>Empiezas como <strong>1</strong>.</li>
+            <li>Los bloques que tocas suman de forma coherente.</li>
+            <li>El camino está armado para llegar exacto a <strong>100</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="mensaje" id="mensajeJuego">
+          Sube piso por piso y toca los Numberblocks en orden.
+        </div>
+
+        <button class="boton acento" id="botonReiniciar">Reiniciar partida</button>
+
+        <div class="movil">
+          <button class="boton" id="botonIzquierda">Izquierda</button>
+          <button class="boton acento" id="botonSaltar">Saltar</button>
+          <button class="boton" id="botonDerecha">Derecha</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="../../shared/site.js"></script>
+  <script>
+    const META = 100;
+
+    const BLOQUES = {
+      1: {
+        nombre: 'One',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/2/21/DiaOne.png/revision/latest/scale-to-width-down/112?cb=20250709141239'
+      },
+      2: {
+        nombre: 'Two',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/1/1f/DiaTwo.png/revision/latest/scale-to-width-down/112?cb=20250709141325'
+      },
+      3: {
+        nombre: 'Three',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/f/f6/DiaThree.png/revision/latest/scale-to-width-down/112?cb=20220701224832'
+      },
+      4: {
+        nombre: 'Four',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/e/ee/DiaFour.png/revision/latest/scale-to-width-down/112?cb=20250111121943'
+      },
+      5: {
+        nombre: 'Five',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/7/79/DiaFiveNew.png/revision/latest/scale-to-width-down/112?cb=20250827215124'
+      },
+      6: {
+        nombre: 'Six',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/f/fd/DiaSix.png/revision/latest/scale-to-width-down/112?cb=20220701225037'
+      },
+      7: {
+        nombre: 'Seven',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/5/58/DiaSevenNew.png/revision/latest/scale-to-width-down/112?cb=20250825220414'
+      },
+      8: {
+        nombre: 'Eight',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/2/21/DiaEightNew.jpeg/revision/latest/scale-to-width-down/112?cb=20250111121632'
+      },
+      9: {
+        nombre: 'Nine',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/7/7b/DiaNineNew.png/revision/latest/scale-to-width-down/112?cb=20250924124022'
+      },
+      10: {
+        nombre: 'Ten',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/a/aa/DiaTen.png/revision/latest/scale-to-width-down/112?cb=20250111121725'
+      },
+      11: {
+        nombre: 'Eleven',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/a/a7/DiaEleven.png/revision/latest/scale-to-width-down/112?cb=20250717000130'
+      },
+      12: {
+        nombre: 'Twelve',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/3/3f/DiaTwelve.png/revision/latest/scale-to-width-down/112?cb=20210126063654'
+      },
+      13: {
+        nombre: 'Thirteen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/9/97/DiaThirteen.png/revision/latest/scale-to-width-down/112?cb=20250111130140'
+      },
+      14: {
+        nombre: 'Fourteen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/d/da/DiaFourteen.png/revision/latest/scale-to-width-down/112?cb=20250923185453'
+      },
+      15: {
+        nombre: 'Fifteen',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/cb/DiaFifteen.png/revision/latest/scale-to-width-down/112?cb=20250923185723'
+      },
+      16: {
+        nombre: 'Sixteen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/cd/DiaSixteen.png/revision/latest/scale-to-width-down/112?cb=20231124183855'
+      },
+      17: {
+        nombre: 'Seventeen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/0/05/DiaSeventeen.png/revision/latest/scale-to-width-down/112?cb=20210924122316'
+      },
+      18: {
+        nombre: 'Eighteen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/1/16/DiaEighteen.png/revision/latest/scale-to-width-down/112?cb=20251009023053'
+      },
+      19: {
+        nombre: 'Nineteen',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/1/1c/DiaNineteen.png/revision/latest/scale-to-width-down/112?cb=20220701224956'
+      },
+      20: {
+        nombre: 'Twenty',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/cc/DiaTwenty.png/revision/latest/scale-to-width-down/112?cb=20210924122412'
+      },
+      21: {
+        nombre: 'Twenty-One',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/4/48/DiaTwenty-One.png/revision/latest/scale-to-width-down/112?cb=20250825215135'
+      },
+      22: {
+        nombre: 'Twenty-Two',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/ca/DiaTwenty-Two.png/revision/latest/scale-to-width-down/112?cb=20210925094331'
+      },
+      23: {
+        nombre: 'Twenty-Three',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/e/ed/DiaTwenty-Three.png/revision/latest/scale-to-width-down/112?cb=20250825214843'
+      },
+      24: {
+        nombre: 'Twenty-Four',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/cc/DiaTwenty-Four.png/revision/latest/scale-to-width-down/112?cb=20251115005849'
+      },
+      25: {
+        nombre: 'Twenty-Five',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/7/73/DiaTwenty-Five.png/revision/latest/scale-to-width-down/112?cb=20250829222732'
+      },
+      26: {
+        nombre: 'Twenty-Six',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/a/aa/DiaTwenty-Six.png/revision/latest/scale-to-width-down/112?cb=20250825214103'
+      },
+      27: {
+        nombre: 'Twenty-Seven',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/4/42/DiaTwenty-Seven.png/revision/latest/scale-to-width-down/112?cb=20210807042632'
+      },
+      28: {
+        nombre: 'Twenty-Eight',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/6/69/DiaTwenty-Eight.png/revision/latest/scale-to-width-down/112?cb=20250825213838'
+      },
+      29: {
+        nombre: 'Twenty-Nine',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/1/19/DiaTwenty-Nine.png/revision/latest/scale-to-width-down/112?cb=20250825213531'
+      },
+      30: {
+        nombre: 'Thirty',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/0/0f/DiaThirty.png/revision/latest/scale-to-width-down/112?cb=20250825213001'
+      },
+      45: {
+        nombre: 'Forty-Five',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/b/b9/DiaForty-Five.png/revision/latest/scale-to-width-down/112?cb=20250823215300'
+      },
+      50: {
+        nombre: 'Fifty',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/6/6d/DiaFifty.png/revision/latest/scale-to-width-down/112?cb=20250824171521'
+      },
+      54: {
+        nombre: 'Fifty-Four',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/2/2d/DiaFifty-Four.png/revision/latest/scale-to-width-down/112?cb=20260207125816'
+      },
+      55: {
+        nombre: 'Fifty-Five',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/2/2f/DiaFifty-Five.png/revision/latest/scale-to-width-down/112?cb=20250825030746'
+      },
+      56: {
+        nombre: 'Fifty-Six',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/1/17/DiaFifty-Six.png/revision/latest/scale-to-width-down/112?cb=20241222223311'
+      },
+      60: {
+        nombre: 'Sixty',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/2/20/DiaSixty.png/revision/latest/scale-to-width-down/112?cb=20250824171800'
+      },
+      63: {
+        nombre: 'Sixty-Three',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/9/9f/DiaSixty-Three.png/revision/latest/scale-to-width-down/112?cb=20250825205714'
+      },
+      64: {
+        nombre: 'Sixty-Four',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/7/78/DiaSixty-Four.png/revision/latest/scale-to-width-down/112?cb=20250825205322'
+      },
+      70: {
+        nombre: 'Seventy',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/c/c1/DiaSeventy.png/revision/latest/scale-to-width-down/112?cb=20250825032918'
+      },
+      72: {
+        nombre: 'Seventy-Two',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/a/a1/DiaSeventy-Two.png/revision/latest/scale-to-width-down/112?cb=20250825205043'
+      },
+      80: {
+        nombre: 'Eighty',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/e/e8/DiaEighty.png/revision/latest/scale-to-width-down/112?cb=20250824172011'
+      },
+      81: {
+        nombre: 'Eighty-One',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/0/00/DiaEighty-One.png/revision/latest/scale-to-width-down/112?cb=20250825032325'
+      },
+      90: {
+        nombre: 'Ninety',
+        tipo: 'suma',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/3/35/DiaNinety.png/revision/latest/scale-to-width-down/112?cb=20250824172422'
+      },
+      100: {
+        nombre: 'One Hundred',
+        tipo: 'jugador',
+        src: 'https://static.wikia.nocookie.net/numberblocks/images/3/3a/DiaOneHundred.png/revision/latest/scale-to-width-down/112?cb=20260514120649'
+      }
+    };
+
+    const CADENA_SUMA = [2, 3, 4, 5, 10, 20, 25, 30];
+
+    const canvas = document.getElementById('juego');
+    const ctx = canvas.getContext('2d');
+    const vistaJugadorActual = document.getElementById('vistaJugadorActual');
+    const textoJugadorActual = document.getElementById('textoJugadorActual');
+    const vistaSiguienteBloque = document.getElementById('vistaSiguienteBloque');
+    const textoSiguienteBloque = document.getElementById('textoSiguienteBloque');
+    const hudSuma = document.getElementById('hudSuma');
+    const hudSiguiente = document.getElementById('hudSiguiente');
+    const mensajeJuego = document.getElementById('mensajeJuego');
+    const botonReiniciar = document.getElementById('botonReiniciar');
+    const botonIzquierda = document.getElementById('botonIzquierda');
+    const botonDerecha = document.getElementById('botonDerecha');
+    const botonSaltar = document.getElementById('botonSaltar');
+
+    const imagenes = {};
+    const dimensionesBloques = {};
+    const teclas = {
+      izquierda: false,
+      derecha: false,
+      salto: false
+    };
+
+    const estado = {
+      jugador: {
+        x: 210,
+        y: 590,
+        ancho: 112,
+        alto: 112,
+        vx: 0,
+        vy: 0,
+        enSuelo: false,
+        valor: 1,
+        bloque: 1
+      },
+      plataformas: [],
+      coleccionables: [],
+      camaraY: 0,
+      siguienteIndice: 0,
+      puntoSeguro: {
+        x: 210,
+        y: 538
+      },
+      terminado: false,
+      listo: false
+    };
+
+    function obtenerSrcBloque(valor) {
+      return BLOQUES[valor]?.src ?? '';
+    }
+
+    function obtenerDimensionesBloque(valor) {
+      return dimensionesBloques[valor] ?? { ancho: 112, alto: 112 };
+    }
+
+    function prepararJugador() {
+      const dimensiones = obtenerDimensionesBloque(estado.jugador.valor);
+      const pie = estado.jugador.y + estado.jugador.alto;
+      estado.jugador.ancho = dimensiones.ancho;
+      estado.jugador.alto = dimensiones.alto;
+      estado.jugador.y = pie - estado.jugador.alto;
+    }
+
+    async function cargarBancoBloques() {
+      const promesas = Object.entries(BLOQUES).map(([valor, bloque]) => {
+        return new Promise((resolver) => {
+          const imagen = new Image();
+          imagen.crossOrigin = 'anonymous';
+          imagen.onload = () => {
+            dimensionesBloques[valor] = {
+              ancho: imagen.naturalWidth || 112,
+              alto: imagen.naturalHeight || 112
+            };
+            resolver();
+          };
+          imagen.onerror = () => {
+            dimensionesBloques[valor] = { ancho: 112, alto: 112 };
+            resolver();
+          };
+          imagen.src = bloque.src;
+          imagenes[valor] = imagen;
+        });
+      });
+      await Promise.all(promesas);
+    }
+
+    function crearNivel() {
+      const baseY = 640;
+      const baseX = 92;
+      const baseAncho = 296;
+
+      estado.plataformas = [
+        { x: baseX, y: baseY, ancho: baseAncho, alto: 18, color: '#546a94', tipo: 'base' }
+      ];
+      estado.coleccionables = [];
+
+      let actualY = baseY - 88;
+      let actualX = 56;
+
+      CADENA_SUMA.forEach((valor, indice) => {
+        const anchoPlataforma = indice < 3 ? 164 : indice < 6 ? 150 : 138;
+        actualX = indice % 2 === 0
+          ? 48 + (indice * 18)
+          : 228 - (indice * 8);
+
+        actualX = Math.max(28, Math.min(480 - anchoPlataforma - 28, actualX));
+        const dimensiones = obtenerDimensionesBloque(valor);
+
+        estado.plataformas.push({
+          x: actualX,
+          y: actualY,
+          ancho: anchoPlataforma,
+          alto: 18,
+          color: indice % 2 === 0 ? '#6f82b9' : '#516b9a',
+          tipo: 'normal'
+        });
+
+        estado.coleccionables.push({
+          valor,
+          x: actualX + anchoPlataforma / 2 - dimensiones.ancho / 2,
+          y: actualY - dimensiones.alto - 14,
+          ancho: dimensiones.ancho,
+          alto: dimensiones.alto,
+          tomado: false
+        });
+
+        actualY -= indice < 4 ? 95 : 102;
+      });
+    }
+
+    function reiniciarPartida() {
+      estado.inicio = performance.now();
+      estado.jugador.x = 210;
+      estado.jugador.y = 590;
+      estado.jugador.vx = 0;
+      estado.jugador.vy = 0;
+      estado.jugador.enSuelo = false;
+      estado.jugador.valor = 1;
+      estado.jugador.bloque = 1;
+      estado.camaraY = 0;
+      estado.siguienteIndice = 0;
+      estado.terminado = false;
+      estado.puntoSeguro = {
+        x: 210,
+        y: 528
+      };
+      prepararJugador();
+      estado.jugador.y = 640 - estado.jugador.alto;
+      estado.puntoSeguro.y = 640 - estado.jugador.alto;
+      crearNivel();
+      actualizarHud();
+      actualizarMensaje('Sube piso por piso y toca los Numberblocks en orden.');
+      dibujarEscena();
+    }
+
+    function actualizarHud() {
+      hudSuma.textContent = String(estado.jugador.valor);
+      const siguiente = CADENA_SUMA[estado.siguienteIndice];
+      hudSiguiente.textContent = siguiente ? `+${siguiente}` : 'Meta';
+      const bloqueActual = BLOQUES[estado.jugador.valor] ?? BLOQUES[1];
+      vistaJugadorActual.src = obtenerSrcBloque(estado.jugador.valor);
+      textoJugadorActual.textContent = `${estado.jugador.valor} - ${bloqueActual.nombre}`;
+
+      if (siguiente) {
+        const bloqueSiguiente = BLOQUES[siguiente];
+        vistaSiguienteBloque.src = obtenerSrcBloque(siguiente);
+        textoSiguienteBloque.textContent = `${siguiente} - ${bloqueSiguiente.nombre}`;
+      } else {
+        vistaSiguienteBloque.src = obtenerSrcBloque(100);
+        textoSiguienteBloque.textContent = '100 - One Hundred';
+      }
+    }
+
+    function actualizarMensaje(texto, ganaste = false) {
+      mensajeJuego.textContent = texto;
+      mensajeJuego.classList.toggle('ganaste', ganaste);
+    }
+
+    function dibujarFondo() {
+      const ancho = canvas.width;
+      const alto = canvas.height;
+      const gradiente = ctx.createLinearGradient(0, 0, 0, alto);
+      gradiente.addColorStop(0, '#09111f');
+      gradiente.addColorStop(0.6, '#04070f');
+      gradiente.addColorStop(1, '#020309');
+      ctx.fillStyle = gradiente;
+      ctx.fillRect(0, 0, ancho, alto);
+
+      const estrellas = [
+        [32, 54], [88, 112], [172, 72], [258, 140], [396, 84],
+        [450, 58], [110, 230], [224, 182], [332, 246], [62, 330],
+        [414, 310], [180, 420], [324, 476], [86, 552], [424, 586]
+      ];
+
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      estrellas.forEach(([x, y], indice) => {
+        const mov = estado.camaraY * 0.06;
+        const yy = (y + mov + indice * 13) % (alto + 70) - 35;
+        ctx.fillStyle = indice % 3 === 0 ? '#f7fbff' : indice % 3 === 1 ? '#98b4ff' : '#ffd166';
+        ctx.beginPath();
+        ctx.arc(x, yy, indice % 3 === 0 ? 1.6 : 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+
+      const neblina = ctx.createLinearGradient(0, 0, 0, alto);
+      neblina.addColorStop(0, 'rgba(98, 145, 255, 0.10)');
+      neblina.addColorStop(1, 'rgba(255, 209, 102, 0.03)');
+      ctx.fillStyle = neblina;
+      ctx.fillRect(0, 0, ancho, alto);
+    }
+
+    function dibujarPlataforma(plataforma) {
+      const x = plataforma.x;
+      const y = plataforma.y - estado.camaraY;
+      if (y < -60 || y > canvas.height + 60) return;
+
+      ctx.fillStyle = plataforma.tipo === 'base' ? '#7f8fb4' : plataforma.color;
+      ctx.fillRect(x, y, plataforma.ancho, plataforma.alto);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(x, y, plataforma.ancho, 4);
+
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(x, y + plataforma.alto - 3, plataforma.ancho, 3);
+    }
+
+    function dibujarColeccionable(co) {
+      if (co.tomado) return;
+      const x = co.x;
+      const y = co.y - estado.camaraY;
+      if (y < -80 || y > canvas.height + 80) return;
+
+      const imagen = imagenes[co.valor];
+      if (imagen && imagen.complete) {
+        ctx.drawImage(imagen, x, y, co.ancho, co.alto);
+      } else {
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath();
+        ctx.arc(x + co.ancho / 2, y + co.alto / 2, Math.min(co.ancho, co.alto) / 2 - 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#04101f';
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`+${co.valor}`, x + co.ancho / 2, y + co.alto / 2);
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    function dibujarJugador() {
+      const jugador = estado.jugador;
+      const x = jugador.x;
+      const y = jugador.y - estado.camaraY;
+      const imagen = imagenes[jugador.bloque];
+
+      if (imagen && imagen.complete) {
+        ctx.drawImage(imagen, x, y, jugador.ancho, jugador.alto);
+      } else {
+        ctx.fillStyle = '#ffd166';
+        ctx.fillRect(x, y, jugador.ancho, jugador.alto);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(jugador.valor), x + jugador.ancho / 2, y + jugador.alto + 16);
+      ctx.textAlign = 'start';
+    }
+
+    function dibujarTextoCentral(texto, color, fondo) {
+      ctx.save();
+      ctx.fillStyle = fondo;
+      ctx.fillRect(0, canvas.height / 2 - 54, canvas.width, 108);
+      ctx.fillStyle = color;
+      ctx.font = '900 44px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 14);
+      ctx.restore();
+    }
+
+    function dibujarEscena() {
+      dibujarFondo();
+
+      estado.plataformas.forEach(dibujarPlataforma);
+      estado.coleccionables.forEach(dibujarColeccionable);
+      dibujarJugador();
+
+      if (estado.terminado) {
+        dibujarTextoCentral('Ganaste', '#7fe7c4', 'rgba(4, 10, 20, 0.72)');
+      }
+    }
+
+    function rectangulosChocan(a, b) {
+      return a.x < b.x + b.ancho &&
+        a.x + a.ancho > b.x &&
+        a.y < b.y + b.alto &&
+        a.y + a.alto > b.y;
+    }
+
+    function actualizarJugador(delta) {
+      const jugador = estado.jugador;
+
+      if (teclas.izquierda) {
+        jugador.vx = -4.6;
+      } else if (teclas.derecha) {
+        jugador.vx = 4.6;
+      } else {
+        jugador.vx *= 0.86;
+      }
+
+      jugador.vy += 0.55 * delta * 60;
+      jugador.x += jugador.vx * delta * 60;
+      jugador.y += jugador.vy * delta * 60;
+
+      if (jugador.x < -10) jugador.x = canvas.width - jugador.ancho + 10;
+      if (jugador.x > canvas.width - jugador.ancho + 10) jugador.x = -10;
+
+      jugador.enSuelo = false;
+
+      if (jugador.vy >= 0) {
+        estado.plataformas.forEach((plataforma) => {
+          const dentroHorizontal = jugador.x + jugador.ancho > plataforma.x + 6 &&
+            jugador.x < plataforma.x + plataforma.ancho - 6;
+          const tocandoArriba = jugador.y + jugador.alto >= plataforma.y &&
+            jugador.y + jugador.alto <= plataforma.y + 20;
+
+          if (dentroHorizontal && tocandoArriba) {
+            jugador.y = plataforma.y - jugador.alto;
+            jugador.vy = 0;
+            jugador.enSuelo = true;
+            estado.puntoSeguro = {
+              x: plataforma.x + plataforma.ancho / 2 - jugador.ancho / 2,
+              y: plataforma.y - jugador.alto
+            };
+          }
+        });
+      }
+
+      estado.coleccionables.forEach((co) => {
+        if (co.tomado) return;
+        if (rectangulosChocan(jugador, co)) {
+          co.tomado = true;
+          jugador.valor += co.valor;
+          jugador.bloque = jugador.valor;
+          prepararJugador();
+          estado.siguienteIndice = Math.min(CADENA_SUMA.length, estado.siguienteIndice + 1);
+          actualizarHud();
+          actualizarMensaje(`Sumaste ${co.valor}. Ahora vas en ${jugador.valor}.`);
+
+          if (jugador.valor === META) {
+            estado.terminado = true;
+            const score = Math.max(0, 6000 - Math.floor((performance.now() - estado.inicio) / 10));
+            window.recordGameScore?.('numberblocks-subida', score, { label: 'Numberblocks Subida' });
+            actualizarMensaje('Llegaste exacto a 100. Bien ahí, partida cerrada.', true);
+          }
+        }
+      });
+
+      estado.camaraY = Math.min(0, jugador.y - 420);
+
+      if (jugador.y - estado.camaraY > canvas.height + 90) {
+        jugador.x = estado.puntoSeguro.x;
+        jugador.y = estado.puntoSeguro.y;
+        jugador.vx = 0;
+        jugador.vy = 0;
+        jugador.enSuelo = true;
+        actualizarMensaje('Te devolví al último piso seguro para que sigas subiendo.');
+      }
+    }
+
+    function bucle(tiempo) {
+      if (!estado.ultimoTiempo) estado.ultimoTiempo = tiempo;
+      const delta = Math.min(0.033, (tiempo - estado.ultimoTiempo) / 1000);
+      estado.ultimoTiempo = tiempo;
+
+      if (estado.listo && !estado.terminado) {
+        actualizarJugador(delta);
+      }
+
+      dibujarEscena();
+      requestAnimationFrame(bucle);
+    }
+
+    function saltar() {
+      if (estado.terminado) return;
+      if (estado.jugador.enSuelo) {
+        estado.jugador.vy = -11.7;
+        estado.jugador.enSuelo = false;
+      }
+    }
+
+    function manejarTeclaAbajo(evento) {
+      if (evento.repeat) return;
+      if (evento.key === 'ArrowLeft' || evento.key === 'a' || evento.key === 'A') teclas.izquierda = true;
+      if (evento.key === 'ArrowRight' || evento.key === 'd' || evento.key === 'D') teclas.derecha = true;
+      if (evento.key === ' ' || evento.key === 'ArrowUp' || evento.key === 'w' || evento.key === 'W') {
+        teclas.salto = true;
+        saltar();
+      }
+    }
+
+    function manejarTeclaArriba(evento) {
+      if (evento.key === 'ArrowLeft' || evento.key === 'a' || evento.key === 'A') teclas.izquierda = false;
+      if (evento.key === 'ArrowRight' || evento.key === 'd' || evento.key === 'D') teclas.derecha = false;
+      if (evento.key === ' ' || evento.key === 'ArrowUp' || evento.key === 'w' || evento.key === 'W') {
+        teclas.salto = false;
+      }
+    }
+
+    function configurarBotonMantenido(boton, propiedad) {
+      const activar = () => { teclas[propiedad] = true; };
+      const desactivar = () => { teclas[propiedad] = false; };
+
+      boton.addEventListener('pointerdown', (evento) => {
+        evento.preventDefault();
+        activar();
+      });
+      boton.addEventListener('pointerup', desactivar);
+      boton.addEventListener('pointerleave', desactivar);
+      boton.addEventListener('pointercancel', desactivar);
+      boton.addEventListener('contextmenu', (evento) => evento.preventDefault());
+    }
+
+    document.addEventListener('keydown', manejarTeclaAbajo);
+    document.addEventListener('keyup', manejarTeclaArriba);
+    botonReiniciar.addEventListener('click', reiniciarPartida);
+    botonSaltar.addEventListener('click', saltar);
+
+    configurarBotonMantenido(botonIzquierda, 'izquierda');
+    configurarBotonMantenido(botonDerecha, 'derecha');
+
+    async function iniciar() {
+      crearNivel();
+      actualizarHud();
+      actualizarMensaje('Esperando que terminen de cargar los Numberblocks.');
+      dibujarEscena();
+      await cargarBancoBloques();
+      estado.listo = true;
+      actualizarMensaje('Ya está. Saltá desde 1 hasta 100 con los bloques correctos.');
+      reiniciarPartida();
+      requestAnimationFrame(bucle);
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

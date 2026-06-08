@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jump Neón</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <style>
+      .board-wrap {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(5, 8, 22, 0.86);
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-height: 72vh;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Runner neón</p>
+              <h1>Jump Neón</h1>
+              <p>No toques los bloques del piso. Salta, encadena combo y aprovecha los descansos.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="combo-pill">x1</span>
+              <span class="pill" id="score-pill">Puntos: 0</span>
+              <span class="pill" id="status-pill">Toca para saltar</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+              <span class="pill">Click y tap solamente</span>
+            </div>
+            <div class="board-wrap">
+              <canvas id="game" width="960" height="420" aria-label="Jump Neón"></canvas>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const comboPill = document.getElementById("combo-pill");
+      const scorePill = document.getElementById("score-pill");
+      const statusPill = document.getElementById("status-pill");
+      const resetButton = document.getElementById("reset-button");
+      const gravity = 1800;
+      const jumpPower = 620;
+      const speed = 230;
+      let heroImage = new Image();
+      heroImage.src = blockForNumber(1).src;
+      let lastTime = 0;
+      let state;
+
+      function buildTrack() {
+        const segments = [];
+        let x = 0;
+        for (let i = 0; i < 26; i += 1) {
+          const rest = i > 0 && i % 8 === 0;
+          const length = rest ? 6 : 2 + Math.floor(Math.random() * 4);
+          const gap = rest ? 0 : 1 + Math.floor(Math.random() * 3);
+          segments.push({ x, w: length * 72, rest });
+          x += length * 72 + gap * 72;
+        }
+        return segments;
+      }
+
+      function reset() {
+        state = {
+          x: 80,
+          y: 248,
+          vy: 0,
+          onGround: true,
+          combo: 1,
+          score: 0,
+          alive: true,
+          camera: 0,
+          track: buildTrack(),
+          messageTimer: 0,
+          restMessage: "",
+          restActive: false,
+          scored: false,
+        };
+        comboPill.textContent = "x1";
+        scorePill.textContent = "Puntos: 0";
+        statusPill.textContent = "Toca para saltar";
+        draw();
+      }
+
+      function floorHeight() {
+        return 342;
+      }
+
+      function currentSegment() {
+        return state.track.find((segment) => state.x + 24 >= segment.x && state.x <= segment.x + segment.w);
+      }
+
+      function jump() {
+        if (!state.alive || !state.onGround) return;
+        state.vy = -jumpPower;
+        state.onGround = false;
+        state.combo += 1;
+        comboPill.textContent = `x${state.combo}`;
+      }
+
+      function update(dt) {
+        if (!state.alive) return;
+        state.vy += gravity * dt;
+        state.y += state.vy * dt;
+        state.x += speed * dt;
+        state.camera = state.x - 160;
+
+        const segment = currentSegment();
+        const groundY = floorHeight();
+        const hazardIndex = Math.floor(state.x / 72);
+        const touchingHazard = hazardIndex % 3 === 0 && state.y + 42 >= groundY + 42;
+        if (touchingHazard && !segment) {
+          state.alive = false;
+          statusPill.textContent = "Perdiste";
+          if (!state.scored) {
+            state.scored = true;
+            window.recordGameScore?.("jump-neon", state.score * 10 + state.combo, { label: "Jump Neón" });
+          }
+          return;
+        }
+        if (segment && state.y + 42 >= groundY) {
+          state.y = groundY - 42;
+          state.vy = 0;
+          if (!state.onGround) {
+            state.score += state.combo;
+            state.combo = 1;
+            scorePill.textContent = `Puntos: ${state.score}`;
+            comboPill.textContent = "x1";
+          }
+          state.onGround = true;
+          if (segment.rest && !state.restActive) {
+            state.restActive = true;
+            state.restMessage = "Un pequeño descanso...";
+            statusPill.textContent = state.restMessage;
+            state.messageTimer = 1.8;
+          } else if (!segment.rest) {
+            state.restActive = false;
+            if (statusPill.textContent === state.restMessage) statusPill.textContent = "Sigue saltando";
+          }
+        } else {
+          state.onGround = false;
+          if (state.y > canvas.height + 60) {
+            state.alive = false;
+            statusPill.textContent = "Perdiste";
+            if (!state.scored) {
+              state.scored = true;
+              window.recordGameScore?.("jump-neon", state.score * 10 + state.combo, { label: "Jump Neón" });
+            }
+          }
+        }
+
+        if (state.messageTimer > 0) {
+          state.messageTimer -= dt;
+          if (state.messageTimer <= 0 && statusPill.textContent === state.restMessage) {
+            statusPill.textContent = "Sigue saltando";
+          }
+        }
+      }
+
+      function roundRect(x, y, w, h, r, fill) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.closePath();
+        if (fill) ctx.fill();
+      }
+
+      function drawBlock(x, y, w, h, fill) {
+        ctx.fillStyle = fill;
+        roundRect(x, y, w, h, 10, true);
+      }
+
+      function draw() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const background = ctx.createLinearGradient(0, 0, 0, h);
+        background.addColorStop(0, "#182442");
+        background.addColorStop(1, "#050816");
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.save();
+        ctx.translate(-state.camera, 0);
+        state.track.forEach((segment) => {
+          const x = segment.x;
+          const color = segment.rest ? "#63e6be" : "#233253";
+          drawBlock(x, floorHeight(), segment.w, 42, color);
+          if (segment.rest) {
+            ctx.fillStyle = "rgba(255,255,255,0.75)";
+            ctx.font = "800 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("Un pequeño descanso...", x + segment.w / 2, 328);
+          }
+        });
+
+        const groundBlocks = Math.floor((state.x + 260) / 72);
+        for (let i = 0; i < groundBlocks; i += 1) {
+          if (i % 3 === 0) {
+            const x = i * 72;
+            drawBlock(x, floorHeight() + 42, 72, 24, "#ff5c7a");
+          }
+        }
+
+        const heroX = state.x;
+        const heroY = state.y;
+        ctx.save();
+        ctx.translate(heroX, heroY);
+        if (heroImage.complete && heroImage.naturalWidth) {
+          ctx.drawImage(heroImage, 0, 0, 42, 42);
+        } else {
+          ctx.fillStyle = "#7ca8ff";
+          roundRect(0, 0, 42, 42, 10, true);
+        }
+        ctx.restore();
+        ctx.restore();
+
+        if (!state.alive) {
+          ctx.fillStyle = "rgba(0,0,0,0.46)";
+          ctx.fillRect(0, 0, w, h);
+          ctx.fillStyle = "#fff";
+          ctx.font = "800 34px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Perdiste", w / 2, h / 2 - 8);
+          ctx.font = "600 18px sans-serif";
+          ctx.fillText("Toca reiniciar y vuelve a intentar el combo", w / 2, h / 2 + 24);
+        }
+      }
+
+      function loop(time) {
+        const dt = Math.min(0.032, (time - lastTime) / 1000 || 0.016);
+        lastTime = time;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      canvas.addEventListener("pointerdown", jump);
+      resetButton.addEventListener("click", reset);
+      reset();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>

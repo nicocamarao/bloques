@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pianito Online</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <style>
+      .piano {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .piano .tile {
+        min-height: 120px;
+        display: grid;
+        align-content: end;
+        justify-items: center;
+        padding: 12px 8px;
+      }
+      .piano .tile.blackish {
+        background: linear-gradient(180deg, rgba(124,168,255,0.20), rgba(0,0,0,0.28));
+      }
+    </style>
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Música táctil</p>
+              <h1>Pianito Online</h1>
+              <p>Toca con el mouse o con el dedo. Nada de teclado: solo botones grandes y claros.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="status-pill">Listo para tocar</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Silenciar</button>
+              <span class="pill">8 notas táctiles</span>
+            </div>
+            <div class="piano" id="piano"></div>
+            <div class="game-note">Cada tecla suena al tocarla. Ideal para celular.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      const piano = document.getElementById("piano");
+      const statusPill = document.getElementById("status-pill");
+      const resetButton = document.getElementById("reset-button");
+      const notes = [
+        { label: "Do", freq: 261.63 },
+        { label: "Re", freq: 293.66 },
+        { label: "Mi", freq: 329.63 },
+        { label: "Fa", freq: 349.23 },
+        { label: "Sol", freq: 392.00 },
+        { label: "La", freq: 440.00 },
+        { label: "Si", freq: 493.88 },
+        { label: "Do+", freq: 523.25 },
+      ];
+      let audioContext = null;
+      let activeNodes = [];
+
+      function getContext() {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        return audioContext;
+      }
+
+      function stopAll() {
+        activeNodes.forEach(({ osc, gain }) => {
+          gain.gain.cancelScheduledValues(getContext().currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, getContext().currentTime + 0.08);
+          osc.stop(getContext().currentTime + 0.12);
+        });
+        activeNodes = [];
+        statusPill.textContent = "Silenciado";
+      }
+
+      function play(freq) {
+        const ctx = getContext();
+        if (ctx.state === "suspended") ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.exponentialRampToValueAtTime(0.28, ctx.currentTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.42);
+        activeNodes.push({ osc, gain });
+        statusPill.textContent = `Tocando ${freq.toFixed(0)} Hz`;
+        osc.onended = () => {
+          activeNodes = activeNodes.filter((node) => node.osc !== osc);
+        };
+      }
+
+      notes.forEach((note, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `tile ${index === 1 || index === 3 || index === 6 ? "blackish" : "fill"}`;
+        button.innerHTML = `<span class="symbol" style="font-size:18px">${note.label}</span>`;
+        button.addEventListener("pointerdown", () => play(note.freq));
+        piano.appendChild(button);
+      });
+
+      resetButton.addEventListener("click", stopAll);
+    </script>
+  </body>
+</html>

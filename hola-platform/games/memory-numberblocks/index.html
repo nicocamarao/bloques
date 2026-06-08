@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Memory de Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Memoria visual</p>
+              <h1>Memory de Numberblocks</h1>
+              <p>Encuentra las parejas iguales y completa el tablero con clicks o taps.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="moves-pill">Movidas: 0</span>
+              <span class="pill" id="pairs-pill">Parejas: 0/6</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+              <span class="pill">Sin tiempo, solo memoria.</span>
+            </div>
+            <div id="board" class="game-board grid-4" aria-label="Tablero de memory"></div>
+            <div class="game-note" id="status">Abre dos cartas para empezar.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const board = document.getElementById("board");
+      const status = document.getElementById("status");
+      const movesPill = document.getElementById("moves-pill");
+      const pairsPill = document.getElementById("pairs-pill");
+      const resetButton = document.getElementById("reset-button");
+      const pairCount = 6;
+      let state = {};
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function start() {
+        const deck = shuffle(Array.from({ length: pairCount }, (_, index) => index + 1).flatMap((value) => [value, value]));
+        state = {
+          deck: deck.map((value, index) => ({
+            id: `${index}-${value}`,
+            value,
+            open: false,
+            found: false,
+          })),
+          first: null,
+          second: null,
+          lock: false,
+          moves: 0,
+          foundPairs: 0,
+        };
+        render();
+      }
+
+      function render() {
+        board.innerHTML = "";
+        state.deck.forEach((card, index) => {
+          const button = document.createElement("button");
+          button.className = `tile ${card.open || card.found ? "fill" : ""}`;
+          button.type = "button";
+          button.innerHTML = card.open || card.found
+            ? `<img src="${blockForNumber(card.value).src}" alt="Numberblock ${card.value}">`
+            : `<span class="symbol" style="color:#7ca8ff">?</span>`;
+          if (card.found) button.style.outline = "2px solid rgba(99,230,190,0.45)";
+          button.disabled = card.found || state.lock;
+          button.addEventListener("click", () => flip(index));
+          board.appendChild(button);
+        });
+        movesPill.textContent = `Movidas: ${state.moves}`;
+        pairsPill.textContent = `Parejas: ${state.foundPairs}/${pairCount}`;
+      }
+
+      function flip(index) {
+        const card = state.deck[index];
+        if (state.lock || card.open || card.found) return;
+        card.open = true;
+        if (!state.first) {
+          state.first = index;
+          status.textContent = "Elige una segunda carta.";
+        } else {
+          state.second = index;
+          state.moves += 1;
+          state.lock = true;
+          if (state.deck[state.first].value === state.deck[state.second].value) {
+            state.deck[state.first].found = true;
+            state.deck[state.second].found = true;
+            state.foundPairs += 1;
+            status.textContent = "Pareja encontrada.";
+            state.first = null;
+            state.second = null;
+            state.lock = false;
+            if (state.foundPairs === pairCount) {
+              const score = Math.max(0, 1500 - state.moves * 120);
+              status.textContent = "Tablero completo.";
+              recordScore("memory-numberblocks", score, { label: "Memory de Numberblocks" }).catch(() => {});
+            }
+          } else {
+            status.textContent = "No coinciden. Vuelve a intentar.";
+            window.setTimeout(() => {
+              state.deck[state.first].open = false;
+              state.deck[state.second].open = false;
+              state.first = null;
+              state.second = null;
+              state.lock = false;
+              render();
+            }, 700);
+          }
+        }
+        render();
+      }
+
+      resetButton.addEventListener("click", start);
+      start();
+    </script>
+  </body>
+</html>

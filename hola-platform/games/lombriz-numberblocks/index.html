@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lombriz Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <style>
+      .board-wrap {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(5, 8, 22, 0.86);
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Arcade suave</p>
+              <h1>Lombriz Numberblocks</h1>
+              <p>Una lombriz más lenta, pensada para móvil, con controles por swipe y toque.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="score-pill">Longitud: 1</span>
+              <span class="pill" id="status-pill">Desliza o toca una dirección</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+              <span class="pill">Movimiento lento</span>
+            </div>
+            <div class="board-wrap">
+              <canvas id="game" width="600" height="600" aria-label="Lombriz Numberblocks"></canvas>
+            </div>
+            <div class="touch-pad" aria-label="Controles táctiles">
+              <button class="tile" data-dir="up" type="button">Arriba</button>
+              <button class="tile" data-dir="left" type="button">Izquierda</button>
+              <button class="tile" data-dir="down" type="button">Abajo</button>
+              <button class="tile" data-dir="right" type="button">Derecha</button>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const scorePill = document.getElementById("score-pill");
+      const statusPill = document.getElementById("status-pill");
+      const resetButton = document.getElementById("reset-button");
+      const gridSize = 20;
+      const cellSize = canvas.width / gridSize;
+      const imageCache = new Map();
+      let snake = [];
+      let food = { x: 10, y: 10 };
+      let direction = { x: 1, y: 0 };
+      let queued = { x: 1, y: 0 };
+      let score = 1;
+      let alive = true;
+      let lastStep = 0;
+      let restTicks = 0;
+      let restMessage = "";
+      let bestScore = 1;
+
+      function reset() {
+        snake = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
+        food = spawnFood();
+        direction = { x: 1, y: 0 };
+        queued = { x: 1, y: 0 };
+        score = 1;
+        alive = true;
+        restTicks = 0;
+        restMessage = "";
+        bestScore = 1;
+        scorePill.textContent = "Longitud: 1";
+        statusPill.textContent = "Desliza o toca una dirección";
+        draw();
+      }
+
+      function spawnFood() {
+        let point;
+        do {
+          point = {
+            x: Math.floor(Math.random() * gridSize),
+            y: Math.floor(Math.random() * gridSize),
+          };
+        } while (snake.some((segment) => segment.x === point.x && segment.y === point.y));
+        return point;
+      }
+
+      function blockImage(value) {
+        if (!imageCache.has(value)) {
+          const image = new Image();
+          image.src = blockForNumber(value).src;
+          imageCache.set(value, image);
+        }
+        return imageCache.get(value);
+      }
+
+      function changeDirection(next) {
+        if (!alive) return;
+        if (next.x === -direction.x && next.y === -direction.y) return;
+        queued = next;
+      }
+
+      function step() {
+        if (!alive) return;
+        direction = queued;
+        const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+        if (head.x < 0 || head.y < 0 || head.x >= gridSize || head.y >= gridSize || snake.some((segment) => segment.x === head.x && segment.y === head.y)) {
+          alive = false;
+          statusPill.textContent = "Perdiste";
+          window.recordGameScore?.("lombriz-numberblocks", Math.max(bestScore, score), { label: "Lombriz Numberblocks" });
+          return;
+        }
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+          score += 1;
+          bestScore = Math.max(bestScore, score);
+          scorePill.textContent = `Longitud: ${score}`;
+          food = spawnFood();
+          window.recordGameScore?.("lombriz-numberblocks", score * 10, { label: "Lombriz Numberblocks" });
+          if (score % 6 === 0) {
+            restTicks = 18;
+            restMessage = "Un pequeño descanso...";
+            statusPill.textContent = restMessage;
+          }
+        } else if (snake.length > Math.max(3, score)) {
+          snake.pop();
+        }
+      }
+
+      function drawBlock(x, y, value, fill) {
+        ctx.save();
+        ctx.fillStyle = fill;
+        ctx.fillRect(x * cellSize + 2, y * cellSize + 2, cellSize - 4, cellSize - 4);
+        const img = blockImage(value);
+        if (img.complete && img.naturalWidth) {
+          ctx.drawImage(img, x * cellSize + 4, y * cellSize + 4, cellSize - 8, cellSize - 8);
+        } else {
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "700 14px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(String(value), x * cellSize + cellSize / 2, y * cellSize + cellSize / 2 + 5);
+        }
+        ctx.restore();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bg.addColorStop(0, "#101a2f");
+        bg.addColorStop(1, "#050816");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let y = 0; y < gridSize; y += 1) {
+          for (let x = 0; x < gridSize; x += 1) {
+            ctx.fillStyle = (x + y) % 2 === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.01)";
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+          }
+        }
+
+        drawBlock(food.x, food.y, (score % 12) + 1, "#ffd166");
+        snake.forEach((segment, index) => {
+          const fill = index === 0 ? "#7ca8ff" : "#63e6be";
+          ctx.fillStyle = fill;
+          ctx.fillRect(segment.x * cellSize + 2, segment.y * cellSize + 2, cellSize - 4, cellSize - 4);
+          if (index === 0) {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "700 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(String(score), segment.x * cellSize + cellSize / 2, segment.y * cellSize + cellSize / 2 + 5);
+          }
+        });
+
+        if (restTicks > 0) {
+          ctx.fillStyle = "rgba(0,0,0,0.35)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "800 26px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(restMessage, canvas.width / 2, canvas.height / 2);
+        }
+      }
+
+      function loop(time) {
+        if (time - lastStep > (restTicks > 0 ? 260 : 220)) {
+          if (restTicks > 0) {
+            restTicks -= 1;
+            if (restTicks === 0) statusPill.textContent = "Sigue la ruta";
+          } else {
+            step();
+          }
+          lastStep = time;
+          draw();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const dx = event.clientX - rect.left - rect.width / 2;
+        const dy = event.clientY - rect.top - rect.height / 2;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          changeDirection({ x: dx > 0 ? 1 : -1, y: 0 });
+        } else {
+          changeDirection({ x: 0, y: dy > 0 ? 1 : -1 });
+        }
+      });
+
+      document.querySelectorAll("[data-dir]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const dir = button.dataset.dir;
+          changeDirection(
+            dir === "up" ? { x: 0, y: -1 } :
+            dir === "down" ? { x: 0, y: 1 } :
+            dir === "left" ? { x: -1, y: 0 } :
+            { x: 1, y: 0 }
+          );
+        });
+      });
+
+      resetButton.addEventListener("click", reset);
+      reset();
+      requestAnimationFrame(loop);
+    </script>
+  </body>
+</html>

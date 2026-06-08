@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mundo Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="shell">
+          <header class="hud">
+            <div>
+              <p class="eyebrow">Aventura de suma</p>
+              <h1>Mundo Numberblocks</h1>
+              <p>Camina, junta amigos y abre los muros exactos. Ahora más centrado y táctil.</p>
+            </div>
+            <div class="controls">
+              <span>Toques y arrastre en móvil</span>
+              <span>No hace falta teclado</span>
+              <span>Meta: 10, 20, 30, 40 y 50</span>
+            </div>
+          </header>
+          <canvas id="game" aria-label="Juego Mundo Numberblocks"></canvas>
+          <section class="mobile-controls" aria-hidden="true">
+            <button data-action="left" type="button">◀</button>
+            <button data-action="jump" type="button">⤒</button>
+            <button data-action="right" type="button">▶</button>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module" src="../sum-quest/game.js"></script>
+  </body>
+</html>

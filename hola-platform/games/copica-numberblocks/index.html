@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Copica Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Ritmo y secuencia</p>
+              <h1>Copica Numberblocks</h1>
+              <p>Repite la secuencia de Numberblocks que va creciendo paso a paso.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="level-pill">Nivel: 1</span>
+              <span class="pill" id="status-pill">Presiona iniciar</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="start-button" type="button">Iniciar</button>
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+            </div>
+            <div id="pad" class="game-board grid-4"></div>
+            <div class="game-note" id="note">Escucha la secuencia y luego tócalos en el mismo orden.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const pad = document.getElementById("pad");
+      const startButton = document.getElementById("start-button");
+      const resetButton = document.getElementById("reset-button");
+      const statusPill = document.getElementById("status-pill");
+      const levelPill = document.getElementById("level-pill");
+      const note = document.getElementById("note");
+      const colors = [1, 2, 3, 4];
+      let sequence = [];
+      let index = 0;
+      let playing = false;
+      let locked = false;
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function renderPad() {
+        pad.innerHTML = "";
+        colors.forEach((value, i) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "tile fill";
+          button.innerHTML = `<img src="${blockForNumber(value).src}" alt="Numberblock ${value}">`;
+          button.addEventListener("click", () => hit(i));
+          pad.appendChild(button);
+        });
+      }
+
+      async function flash(i) {
+        const button = pad.children[i];
+        if (!button) return;
+        button.style.transform = "scale(0.97)";
+        button.style.outline = "2px solid rgba(255,209,102,0.55)";
+        await sleep(280);
+        button.style.transform = "";
+        button.style.outline = "";
+      }
+
+      async function playSequence() {
+        locked = true;
+        statusPill.textContent = "Mira la secuencia";
+        note.textContent = "La secuencia se va marcando sola.";
+        for (const step of sequence) {
+          await flash(step);
+          await sleep(120);
+        }
+        locked = false;
+        index = 0;
+        statusPill.textContent = "Toca en el mismo orden";
+        note.textContent = "Ahora repítela sin equivocarte.";
+      }
+
+      async function startRound() {
+        sequence.push(Math.floor(Math.random() * colors.length));
+        levelPill.textContent = `Nivel: ${sequence.length}`;
+        await playSequence();
+      }
+
+      async function hit(i) {
+        if (locked || !playing) return;
+        await flash(i);
+        if (sequence[index] === i) {
+          index += 1;
+          if (index === sequence.length) {
+            playing = false;
+            locked = true;
+            statusPill.textContent = "Bien hecho";
+            note.textContent = "Preparando siguiente nivel...";
+            recordScore("copica-numberblocks", sequence.length * 150, { label: "Copica Numberblocks" }).catch(() => {});
+            window.setTimeout(async () => {
+              playing = true;
+              await startRound();
+            }, 750);
+          }
+        } else {
+          playing = false;
+          locked = true;
+          statusPill.textContent = "Fallaste";
+          note.textContent = "Presiona reiniciar para volver a empezar.";
+          recordScore("copica-numberblocks", Math.max(0, (sequence.length - 1) * 120), { label: "Copica Numberblocks" }).catch(() => {});
+        }
+      }
+
+      startButton.addEventListener("click", async () => {
+        if (playing) return;
+        playing = true;
+        locked = false;
+        sequence = [];
+        index = 0;
+        note.textContent = "Arranca la secuencia.";
+        await startRound();
+      });
+
+      resetButton.addEventListener("click", () => {
+        if (sequence.length) {
+          recordScore("copica-numberblocks", Math.max(0, (sequence.length - 1) * 120), { label: "Copica Numberblocks" }).catch(() => {});
+        }
+        sequence = [];
+        index = 0;
+        playing = false;
+        locked = false;
+        statusPill.textContent = "Presiona iniciar";
+        levelPill.textContent = "Nivel: 1";
+        note.textContent = "Escucha la secuencia y luego tócalos en el mismo orden.";
+      });
+
+      renderPad();
+    </script>
+  </body>
+</html>

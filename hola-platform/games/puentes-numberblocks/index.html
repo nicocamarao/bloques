@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Puentes Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Suma exacta</p>
+              <h1>Puentes Numberblocks</h1>
+              <p>Elige dos bloques que sumen el objetivo para construir el puente y despejar el tablero.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="target-pill">Objetivo: 12</span>
+              <span class="pill" id="score-pill">Puentes: 0</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="new-target" type="button">Nuevo objetivo</button>
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+            </div>
+            <div id="board" class="game-board grid-4"></div>
+            <div class="game-note" id="status">Toca dos Numberblocks que sumen exacto.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const board = document.getElementById("board");
+      const targetPill = document.getElementById("target-pill");
+      const scorePill = document.getElementById("score-pill");
+      const status = document.getElementById("status");
+      const resetButton = document.getElementById("reset-button");
+      const newTarget = document.getElementById("new-target");
+      let target;
+      let cards;
+      let selected = [];
+      let bridges = 0;
+
+      function randomTarget() {
+        return [10, 12, 14, 16][Math.floor(Math.random() * 4)];
+      }
+
+      function resetDeck() {
+        target = randomTarget();
+        cards = [1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5);
+        selected = [];
+        bridges = 0;
+        status.textContent = "Toca dos bloques.";
+        render();
+      }
+
+      async function pick(index) {
+        if (cards[index] == null) return;
+        if (selected.includes(index)) return;
+        selected.push(index);
+        if (selected.length === 2) {
+          const total = selected.reduce((sum, i) => sum + cards[i], 0);
+          if (total === target) {
+            selected.sort((a, b) => b - a).forEach((i) => {
+              cards.splice(i, 1);
+            });
+            bridges += 1;
+            status.textContent = "Puente construido.";
+            await recordScore("puentes-numberblocks", bridges * 150 + cards.length * 10, { label: "Puentes Numberblocks" });
+            if (!cards.length) {
+              status.textContent = "Tablero despejado.";
+              await recordScore("puentes-numberblocks", bridges * 200 + target, { label: "Puentes Numberblocks" });
+            }
+          } else {
+            status.textContent = "No suman exacto. Intenta otra vez.";
+            await recordScore("puentes-numberblocks", Math.max(0, bridges * 50), { label: "Puentes Numberblocks" });
+          }
+          selected = [];
+        }
+        render();
+      }
+
+      function render() {
+        board.innerHTML = "";
+        cards.forEach((value, index) => {
+          const button = document.createElement("button");
+          button.className = `tile ${selected.includes(index) ? "fill" : ""}`;
+          button.innerHTML = `<img src="${blockForNumber(value).src}" alt="Numberblock ${value}">`;
+          button.addEventListener("click", () => pick(index));
+          board.appendChild(button);
+        });
+        targetPill.textContent = `Objetivo: ${target}`;
+        scorePill.textContent = `Puentes: ${bridges}`;
+      }
+
+      resetButton.addEventListener("click", resetDeck);
+      newTarget.addEventListener("click", () => {
+        target = randomTarget();
+        selected = [];
+        status.textContent = "Nuevo objetivo listo.";
+        render();
+      });
+
+      resetDeck();
+    </script>
+  </body>
+</html>

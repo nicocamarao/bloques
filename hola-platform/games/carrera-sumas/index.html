@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Carrera de Sumas</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Arcade de suma</p>
+              <h1>Carrera de Sumas</h1>
+              <p>Elige un carril por turno, suma el bloque y llega exacto al objetivo.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="goal-pill">Meta: 20</span>
+              <span class="pill" id="score-pill">Puntos: 0</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+              <span class="pill" id="sum-pill">Suma: 0</span>
+            </div>
+            <div id="board" class="game-board grid-3"></div>
+            <div class="game-note" id="status">Toca un carril para sumar su Numberblock.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const board = document.getElementById("board");
+      const goalPill = document.getElementById("goal-pill");
+      const scorePill = document.getElementById("score-pill");
+      const sumPill = document.getElementById("sum-pill");
+      const status = document.getElementById("status");
+      const resetButton = document.getElementById("reset-button");
+      const goal = 20;
+      let currentSum;
+      let lanes;
+      let turns;
+      let score;
+
+      function randomLane() {
+        return 1 + Math.floor(Math.random() * 5);
+      }
+
+      function reset() {
+        currentSum = 0;
+        turns = 0;
+        score = 0;
+        lanes = Array.from({ length: 3 }, () => randomLane());
+        status.textContent = "Elige un carril.";
+        render();
+      }
+
+      async function choose(index) {
+        const value = lanes[index];
+        currentSum += value;
+        turns += 1;
+        score = Math.max(0, 1000 - Math.abs(goal - currentSum) * 40 - turns * 10);
+        if (currentSum === goal) {
+          status.textContent = "Llegaste exacto.";
+          await recordScore("carrera-sumas", score + 500, { label: "Carrera de Sumas" });
+        } else if (currentSum > goal) {
+          status.textContent = "Te pasaste. Reinicia y vuelve a intentarlo.";
+          await recordScore("carrera-sumas", Math.max(0, score - 200), { label: "Carrera de Sumas" });
+        } else {
+          status.textContent = `Suma parcial ${currentSum}. Sigue.`;
+          await recordScore("carrera-sumas", score, { label: "Carrera de Sumas" });
+          lanes[index] = randomLane();
+        }
+        scorePill.textContent = `Puntos: ${score}`;
+        sumPill.textContent = `Suma: ${currentSum}`;
+        render();
+      }
+
+      function render() {
+        board.innerHTML = "";
+        lanes.forEach((value, index) => {
+          const button = document.createElement("button");
+          button.className = "tile fill";
+          button.innerHTML = `
+            <div style="display:grid;gap:8px;justify-items:center">
+              <img src="${blockForNumber(value).src}" alt="Numberblock ${value}" style="width:84px;height:84px;object-fit:contain">
+              <strong style="font-size:18px">${value}</strong>
+            </div>
+          `;
+          button.addEventListener("click", () => choose(index));
+          board.appendChild(button);
+        });
+        goalPill.textContent = `Meta: ${goal}`;
+      }
+
+      resetButton.addEventListener("click", reset);
+      reset();
+    </script>
+  </body>
+</html>

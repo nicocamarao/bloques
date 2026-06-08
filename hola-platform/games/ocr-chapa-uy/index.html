@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OCR de Chapa UY</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+      .ocr-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr);
+        gap: 14px;
+      }
+      .ocr-preview {
+        min-height: 320px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(5, 8, 22, 0.86);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .ocr-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      textarea {
+        width: 100%;
+        min-height: 180px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+        color: #f5f7ff;
+        padding: 12px;
+        resize: vertical;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Utilidad</p>
+              <h1>OCR de Chapa UY</h1>
+              <p>Sube una imagen, recorta si hace falta y deja que el lector intente extraer la chapa.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="status-pill">Esperando imagen</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <input type="file" id="file" accept="image/*" class="hidden">
+              <button class="game-action" id="pick-button" type="button">Elegir imagen</button>
+              <button class="game-action" id="run-button" type="button">Leer chapa</button>
+              <button class="game-action" id="reset-button" type="button">Limpiar</button>
+            </div>
+            <div class="ocr-grid">
+              <div class="ocr-preview" id="preview">
+                <span class="muted">Vista previa de la chapa</span>
+              </div>
+              <div class="game-panel" style="padding:16px">
+                <strong>Resultado</strong>
+                <p class="muted">Aquí aparece la lectura. Si no hay certeza, puedes corregirla a mano.</p>
+                <textarea id="result" placeholder="Resultado OCR..."></textarea>
+              </div>
+            </div>
+            <div class="game-note" id="note">La utilidad queda lista para integrarse al mismo flujo de la plataforma.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      const fileInput = document.getElementById("file");
+      const pickButton = document.getElementById("pick-button");
+      const runButton = document.getElementById("run-button");
+      const resetButton = document.getElementById("reset-button");
+      const preview = document.getElementById("preview");
+      const result = document.getElementById("result");
+      const statusPill = document.getElementById("status-pill");
+      const note = document.getElementById("note");
+      let imageDataUrl = "";
+
+      pickButton.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          imageDataUrl = String(reader.result || "");
+          preview.innerHTML = `<img src="${imageDataUrl}" alt="Vista previa de la chapa">`;
+          statusPill.textContent = "Imagen lista";
+          note.textContent = "Ahora puedes correr OCR o escribir el resultado a mano.";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      runButton.addEventListener("click", async () => {
+        if (!imageDataUrl) {
+          statusPill.textContent = "Falta imagen";
+          return;
+        }
+        if (!window.Tesseract) {
+          statusPill.textContent = "OCR no disponible";
+          note.textContent = "El motor OCR no cargó, pero la interfaz está lista para usar.";
+          return;
+        }
+        statusPill.textContent = "Leyendo...";
+        note.textContent = "Procesando la imagen, un momento.";
+        try {
+          const { data } = await Tesseract.recognize(imageDataUrl, "eng", {
+            logger: (message) => {
+              if (message.status) statusPill.textContent = message.status;
+            },
+          });
+          result.value = String(data.text || "").trim();
+          statusPill.textContent = "Lectura completa";
+          note.textContent = "Si hace falta, corrige manualmente la chapa detectada.";
+        } catch (error) {
+          statusPill.textContent = "Error OCR";
+          note.textContent = error.message || "No se pudo leer la imagen.";
+        }
+      });
+
+      resetButton.addEventListener("click", () => {
+        fileInput.value = "";
+        imageDataUrl = "";
+        preview.innerHTML = `<span class="muted">Vista previa de la chapa</span>`;
+        result.value = "";
+        statusPill.textContent = "Esperando imagen";
+        note.textContent = "La utilidad queda lista para integrarse al mismo flujo de la plataforma.";
+      });
+    </script>
+  </body>
+</html>

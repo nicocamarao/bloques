@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clasifica Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Clasificación</p>
+              <h1>Clasifica Numberblocks</h1>
+              <p>Coloca cada bloque en su grupo correcto: pequeños, medianos o grandes.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="score-pill">Correctos: 0</span>
+              <span class="pill" id="left-pill">Faltan: 12</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+              <span class="pill" id="current-pill">Actual: 1</span>
+            </div>
+            <div class="game-board grid-3" id="baskets"></div>
+            <div id="deck" class="game-board grid-4"></div>
+            <div class="game-note" id="status">Toca el bloque y luego su cesta.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const baskets = document.getElementById("baskets");
+      const deck = document.getElementById("deck");
+      const scorePill = document.getElementById("score-pill");
+      const leftPill = document.getElementById("left-pill");
+      const currentPill = document.getElementById("current-pill");
+      const status = document.getElementById("status");
+      const resetButton = document.getElementById("reset-button");
+      const groups = [
+        { label: "Pequeños", range: [1, 4] },
+        { label: "Medianos", range: [5, 8] },
+        { label: "Grandes", range: [9, 12] },
+      ];
+      let current;
+      let correct;
+      let remaining;
+
+      function newDeck() {
+        const values = Array.from({ length: 12 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+        current = values.shift();
+        remaining = values;
+        correct = 0;
+        render();
+      }
+
+      function checkGroup(value, range) {
+        return value >= range[0] && value <= range[1];
+      }
+
+      async function chooseBasket(index) {
+        const group = groups[index];
+        if (!current) return;
+        if (checkGroup(current, group.range)) {
+          correct += 1;
+          status.textContent = "Correcto.";
+          await recordScore("clasifica-numberblocks", correct * 80, { label: "Clasifica Numberblocks" });
+        } else {
+          status.textContent = "Ese bloque va en otra cesta.";
+          await recordScore("clasifica-numberblocks", Math.max(0, correct * 40), { label: "Clasifica Numberblocks" });
+        }
+        current = remaining.shift() || null;
+        if (!current) {
+          status.textContent = "Clasificación completa.";
+          await recordScore("clasifica-numberblocks", correct * 100 + 200, { label: "Clasifica Numberblocks" });
+        }
+        render();
+      }
+
+      function render() {
+        baskets.innerHTML = "";
+        groups.forEach((group, index) => {
+          const button = document.createElement("button");
+          button.className = "tile fill";
+          button.innerHTML = `
+            <strong style="display:block;font-size:18px">${group.label}</strong>
+            <span class="muted">${group.range[0]} - ${group.range[1]}</span>
+          `;
+          button.addEventListener("click", () => chooseBasket(index));
+          baskets.appendChild(button);
+        });
+
+        deck.innerHTML = "";
+        if (current) {
+          const button = document.createElement("button");
+          button.className = "tile fill";
+          button.innerHTML = `<img src="${blockForNumber(current).src}" alt="Numberblock ${current}">`;
+          deck.appendChild(button);
+        }
+        scorePill.textContent = `Correctos: ${correct}`;
+        leftPill.textContent = `Faltan: ${current ? 1 + remaining.length : 0}`;
+        currentPill.textContent = `Actual: ${current || "-"}`;
+      }
+
+      resetButton.addEventListener("click", newDeck);
+      newDeck();
+    </script>
+  </body>
+</html>

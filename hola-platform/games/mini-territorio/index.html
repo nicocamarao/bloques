@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mini territorio de amigos</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Conquista de mapa</p>
+              <h1>Mini territorio de amigos</h1>
+              <p>Toca una casilla para ir bajando su resistencia. Cuando llega a cero, la conquistas.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="score-pill">Territorio: 0</span>
+              <span class="pill" id="enemy-pill">Rival: 0</span>
+              <span class="pill" id="turn-pill">Turno: tu mapa</span>
+            </div>
+          </header>
+
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <span class="pill" id="hero-block">Bloque 1</span>
+              <span class="pill" id="status-pill">Toca para reclamar.</span>
+            </div>
+            <div id="board" class="game-board grid-6" aria-label="Mapa de conquista"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const size = 6;
+      const board = document.getElementById("board");
+      const scorePill = document.getElementById("score-pill");
+      const enemyPill = document.getElementById("enemy-pill");
+      const turnPill = document.getElementById("turn-pill");
+      const statusPill = document.getElementById("status-pill");
+      const heroBlock = document.getElementById("hero-block");
+
+      const state = {
+        cells: Array.from({ length: size * size }, (_, index) => ({
+          owner: "neutral",
+          cost: 1 + Math.floor(Math.random() * 3),
+          terrain: 1 + (index % 4),
+        })),
+        me: 0,
+        enemy: 0,
+        finished: false,
+        completeScoreSent: false,
+      };
+
+      function neighbors(index) {
+        const row = Math.floor(index / size);
+        const col = index % size;
+        const points = [];
+        if (row > 0) points.push(index - size);
+        if (row < size - 1) points.push(index + size);
+        if (col > 0) points.push(index - 1);
+        if (col < size - 1) points.push(index + 1);
+        return points;
+      }
+
+      function supportBoost(index, owner) {
+        return neighbors(index).filter((neighbor) => state.cells[neighbor].owner === owner).length;
+      }
+
+      function capture(index, owner) {
+        if (state.finished) return;
+        const cell = state.cells[index];
+        if (cell.owner === owner) return;
+        const support = supportBoost(index, owner);
+        const effectiveCost = Math.max(1, cell.cost - support);
+        cell.cost = effectiveCost - 1;
+        if (cell.cost <= 0) {
+          cell.owner = owner;
+          cell.cost = 0;
+          if (owner === "me") state.me += 1;
+          else state.enemy += 1;
+        }
+        if (owner === "me") {
+          const score = state.me * 100 + Math.max(0, 20 - state.enemy * 5);
+          recordScore("mini-territorio", score, { label: "Mini territorio de amigos" }).catch(() => {});
+        }
+        render();
+      }
+
+      function finishIfNeeded() {
+        if (state.finished) return;
+        if (!state.cells.every((cell) => cell.owner !== "neutral")) return;
+        state.finished = true;
+        statusPill.textContent = "Mapa completo.";
+        if (!state.completeScoreSent) {
+          state.completeScoreSent = true;
+          recordScore("mini-territorio", state.me * 120 + 500, { label: "Mini territorio de amigos" }).catch(() => {});
+        }
+      }
+
+      function enemyStep() {
+        const candidates = state.cells
+          .map((cell, index) => ({ cell, index }))
+          .filter(({ cell }) => cell.owner !== "enemy")
+          .filter(({ index }) => supportBoost(index, "enemy") > 0 || Math.random() > 0.7);
+        if (!candidates.length) return;
+        capture(candidates[Math.floor(Math.random() * candidates.length)].index, "enemy");
+      }
+
+      function render() {
+        board.innerHTML = "";
+        state.cells.forEach((cell, index) => {
+          const button = document.createElement("button");
+          button.className = `tile ${cell.owner === "me" ? "fill" : ""}`;
+          button.type = "button";
+          button.innerHTML = cell.owner === "me"
+            ? `<img src="${blockForNumber((state.me % 12) + 1).src}" alt="">`
+            : cell.owner === "enemy"
+              ? `<span class="symbol" style="font-size:20px;color:#ff7a90">AI</span>`
+              : `<span class="symbol" style="font-size:20px">${cell.cost}</span>`;
+          button.addEventListener("click", () => {
+            if (state.finished) return;
+            if (cell.owner === "enemy") return;
+            capture(index, "me");
+            if (!state.finished && !state.cells.every((item) => item.owner !== "neutral")) {
+              window.setTimeout(enemyStep, 280);
+            }
+          });
+          board.appendChild(button);
+        });
+
+        scorePill.textContent = `Territorio: ${state.me}`;
+        enemyPill.textContent = `Rival: ${state.enemy}`;
+        turnPill.textContent = state.me >= state.enemy ? "Turno: tu mapa" : "Turno: presión rival";
+        if (!state.finished) {
+          statusPill.textContent = "Toca para reclamar.";
+        }
+        heroBlock.innerHTML = `<img src="${blockForNumber((state.me % 12) + 1).src}" alt="">`;
+        finishIfNeeded();
+      }
+
+      render();
+      window.setInterval(() => {
+        if (!state.finished && state.cells.some((cell) => cell.owner === "neutral")) enemyStep();
+      }, 2400);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Eco Numberblocks</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Memoria de ritmo</p>
+              <h1>Eco Numberblocks</h1>
+              <p>Mira la secuencia, repítela y sube el puntaje. Cada ronda agrega un bloque más.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="level-pill">Nivel: 1</span>
+              <span class="pill" id="score-pill">Puntos: 0</span>
+            </div>
+          </header>
+          <section class="game-stage stack">
+            <div class="scoreline">
+              <button class="game-action" id="start-button" type="button">Iniciar</button>
+              <button class="game-action" id="reset-button" type="button">Reiniciar</button>
+            </div>
+            <div id="pad" class="game-board grid-4"></div>
+            <div class="game-note" id="status">Toca iniciar para escuchar la secuencia.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module">
+      import { blockForNumber } from "../../shared/numberblocks.js";
+      import { recordScore } from "../../shared/social.js";
+
+      const pad = document.getElementById("pad");
+      const startButton = document.getElementById("start-button");
+      const resetButton = document.getElementById("reset-button");
+      const status = document.getElementById("status");
+      const levelPill = document.getElementById("level-pill");
+      const scorePill = document.getElementById("score-pill");
+      const values = [1, 2, 3, 4];
+      let audio = null;
+      let seq = [];
+      let index = 0;
+      let running = false;
+      let score = 0;
+
+      function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+      function tone(freq) {
+        audio ||= new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        gain.connect(audio.destination);
+        gain.gain.exponentialRampToValueAtTime(0.25, audio.currentTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.18);
+        osc.start();
+        osc.stop(audio.currentTime + 0.22);
+      }
+
+      function render() {
+        pad.innerHTML = "";
+        values.forEach((value, idx) => {
+          const button = document.createElement("button");
+          button.className = "tile fill";
+          button.innerHTML = `<img src="${blockForNumber(value).src}" alt="Numberblock ${value}">`;
+          button.addEventListener("click", () => press(idx));
+          pad.appendChild(button);
+        });
+      }
+
+      async function flash(idx) {
+        const button = pad.children[idx];
+        if (!button) return;
+        button.style.transform = "scale(0.95)";
+        await sleep(240);
+        button.style.transform = "";
+      }
+
+      async function playSequence() {
+        running = true;
+        status.textContent = "Mira y escucha la secuencia";
+        for (const step of seq) {
+          tone(240 + step * 70);
+          await flash(step);
+          await sleep(120);
+        }
+        index = 0;
+        running = false;
+        status.textContent = "Repite la secuencia";
+      }
+
+      async function nextRound() {
+        seq.push(Math.floor(Math.random() * values.length));
+        levelPill.textContent = `Nivel: ${seq.length}`;
+        score = seq.length * 100;
+        scorePill.textContent = `Puntos: ${score}`;
+        await recordScore("eco-numberblocks", score, { label: "Eco Numberblocks" });
+        await playSequence();
+      }
+
+      async function press(idx) {
+        if (running || !seq.length) return;
+        await flash(idx);
+        tone(240 + values[idx] * 70);
+        if (seq[index] === idx) {
+          index += 1;
+          if (index === seq.length) {
+            status.textContent = "Bien. Sube una ronda más.";
+            running = true;
+            index = 0;
+            window.setTimeout(async () => {
+              running = false;
+              await nextRound();
+            }, 600);
+          }
+        } else {
+          status.textContent = "Te equivocaste, pero tu mejor ronda quedó guardada.";
+          await recordScore("eco-numberblocks", Math.max(0, (seq.length - 1) * 100), { label: "Eco Numberblocks" });
+          seq = [];
+          index = 0;
+          running = false;
+          levelPill.textContent = "Nivel: 1";
+        }
+      }
+
+      startButton.addEventListener("click", async () => {
+        if (seq.length) return;
+        seq = [];
+        index = 0;
+        score = 0;
+        await nextRound();
+      });
+
+      resetButton.addEventListener("click", async () => {
+        if (seq.length) await recordScore("eco-numberblocks", Math.max(0, (seq.length - 1) * 100), { label: "Eco Numberblocks" });
+        seq = [];
+        index = 0;
+        running = false;
+        score = 0;
+        levelPill.textContent = "Nivel: 1";
+        scorePill.textContent = "Puntos: 0";
+        status.textContent = "Toca iniciar para escuchar la secuencia.";
+      });
+
+      render();
+    </script>
+  </body>
+</html>
