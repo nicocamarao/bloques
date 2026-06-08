@@ -157,10 +157,30 @@ button, input, textarea, select { font: inherit; }
   background: rgba(124, 168, 255, 0.10);
 }
 
+.menu-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.menu-toggle svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
 .site-top-right {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 8px;
   min-width: 110px;
 }
 
@@ -548,21 +568,31 @@ button, input, textarea, select { font: inherit; }
     grid-template-columns: auto 1fr;
     grid-template-areas:
       "profile brand"
-      "nav nav"
-      "pill pill";
+      "actions actions"
+      "nav nav";
     align-items: start;
   }
 
   .profile-chip { grid-area: profile; }
   .site-brand { grid-area: brand; min-width: 0; }
+  .site-top-right {
+    grid-area: actions;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .menu-toggle {
+    display: inline-flex;
+  }
   .site-nav {
     grid-area: nav;
     width: 100%;
     justify-content: flex-start;
+    display: none;
+    max-height: 42vh;
+    overflow: auto;
   }
-  .site-top-right {
-    grid-area: pill;
-    justify-content: flex-start;
+  .site-top.nav-open .site-nav {
+    display: flex;
   }
 
   .site-sidebar {

@@ -163,10 +163,16 @@ function renderTop() {
           <span>Plataforma de juegos y chat</span>
         </div>
       </div>
-      <nav class="site-nav" aria-label="Juegos">
+      <nav id="site-nav" class="site-nav" aria-label="Juegos">
         ${GAMES.map((game) => `<a href="${game.href}" class="${game.id === activeId ? "active" : ""}">${game.label}</a>`).join("")}
       </nav>
       <div class="site-top-right">
+        <button id="nav-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Mostrar juegos">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Juegos</span>
+        </button>
         <span class="pill" id="presence-pill">${currentGameLabel()}</span>
       </div>
     </header>
@@ -287,6 +293,8 @@ function els() {
     messageList: document.getElementById("message-list"),
     messageForm: document.getElementById("message-form"),
     messageInput: document.getElementById("message-input"),
+    navToggle: document.getElementById("nav-toggle"),
+    siteNav: document.getElementById("site-nav"),
     currentButton: document.getElementById("current-button"),
     selfButton: document.getElementById("self-button"),
     generalButton: document.getElementById("general-button"),
@@ -618,6 +626,33 @@ function bindChat() {
   els().peopleSearch?.addEventListener("input", renderPeople);
 }
 
+function bindTopMenu() {
+  const { navToggle, siteNav } = els();
+  if (!navToggle || !siteNav) return;
+
+  const setOpen = (open) => {
+    const top = slots.top?.querySelector(".site-top");
+    if (!top) return;
+    top.classList.toggle("nav-open", open);
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    navToggle.setAttribute("aria-label", open ? "Ocultar juegos" : "Mostrar juegos");
+  };
+
+  navToggle.addEventListener("click", () => {
+    const top = slots.top?.querySelector(".site-top");
+    setOpen(!top?.classList.contains("nav-open"));
+  });
+
+  siteNav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      const top = slots.top?.querySelector(".site-top");
+      if (top) top.classList.remove("nav-open");
+      navToggle.setAttribute("aria-expanded", "false");
+      navToggle.setAttribute("aria-label", "Mostrar juegos");
+    });
+  });
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -634,6 +669,7 @@ async function bootstrap() {
   renderProfileModal();
   bindModal();
   bindChat();
+  bindTopMenu();
 
   state.me = await bootstrapProfile();
   syncProfileUI();
