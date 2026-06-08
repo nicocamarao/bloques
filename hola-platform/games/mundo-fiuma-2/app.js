@@ -7,15 +7,13 @@ import {
 import { blockForNumber } from "../../shared/numberblocks.js";
 
 const WORLD_ID = "mundo-fiuma-2";
-const WORLD_WIDTH = 3200;
-const WORLD_HEIGHT = 760;
-const GROUND_Y = 612;
+const WORLD_WIDTH = 480;
+const BASE_Y = 640;
 const GRAVITY = 2200;
 const MOVE_SPEED = 320;
 const JUMP_SPEED = 760;
-const CLIMB_SPEED = 240;
-const PLAYER_W = 36;
-const PLAYER_H = 86;
+const PLAYER_W = 56;
+const PLAYER_H = 56;
 
 const canvas = document.getElementById("fiuma2-board");
 const ctx = canvas.getContext("2d");
@@ -31,56 +29,32 @@ const popupClose = document.getElementById("fiuma2-popup-close");
 const boardWrap = document.getElementById("fiuma2-world");
 const moveButtons = Array.from(document.querySelectorAll("[data-move]"));
 const centerButton = document.querySelector("[data-center]");
-const controls = document.getElementById("fiuma2-controls");
+const resetButton = document.querySelector("[data-reset]");
 
 const avatarCache = new Map();
-const landings = [
-  { x: 120, y: GROUND_Y - PLAYER_H },
-  { x: 390, y: 520 - PLAYER_H },
-  { x: 640, y: 460 - PLAYER_H },
-  { x: 920, y: 390 - PLAYER_H },
-  { x: 1260, y: 540 - PLAYER_H },
-  { x: 1580, y: 470 - PLAYER_H },
-  { x: 1900, y: 380 - PLAYER_H },
-  { x: 2220, y: 500 - PLAYER_H },
-  { x: 2580, y: 430 - PLAYER_H },
-  { x: 2940, y: 360 - PLAYER_H },
-];
-
-const platforms = [
-  { x: 0, y: GROUND_Y, w: WORLD_WIDTH, h: WORLD_HEIGHT - GROUND_Y },
-  { x: 240, y: 520, w: 260, h: 18 },
-  { x: 560, y: 460, w: 300, h: 18 },
-  { x: 880, y: 390, w: 180, h: 18 },
-  { x: 1160, y: 540, w: 260, h: 18 },
-  { x: 1520, y: 470, w: 280, h: 18 },
-  { x: 1860, y: 380, w: 320, h: 18 },
-  { x: 2260, y: 500, w: 260, h: 18 },
-  { x: 2600, y: 430, w: 260, h: 18 },
-  { x: 2900, y: 360, w: 220, h: 18 },
-];
-
-const ladders = [
-  { x: 660, y: 460, h: 150 },
-  { x: 1645, y: 470, h: 140 },
-  { x: 2010, y: 380, h: 230 },
-  { x: 2340, y: 430, h: 100 },
-  { x: 2695, y: 430, h: 100 },
+const towerPlatforms = buildTowerPlatforms();
+const bottomSpawns = [
+  { x: 118, y: 590 },
+  { x: 166, y: 590 },
+  { x: 214, y: 590 },
+  { x: 262, y: 590 },
+  { x: 310, y: 590 },
+  { x: 214, y: 546 },
 ];
 
 const state = {
   me: null,
   people: [],
-  mePos: { x: landings[0].x, y: landings[0].y },
+  mePos: { x: bottomSpawns[2].x, y: bottomSpawns[2].y },
   vx: 0,
   vy: 0,
-  onGround: true,
-  climbing: false,
-  cameraX: 0,
+  onGround: false,
+  upLatch: false,
+  cameraY: 0,
   positionInitialized: false,
   popupSessionId: "",
   lastSyncAt: 0,
-  mobile: { left: false, right: false, up: false, down: false },
+  mobile: { left: false, right: false, jump: false },
 };
 
 let peopleUnsub = null;
@@ -125,23 +99,50 @@ function avatarImage(src) {
   return avatarCache.get(src);
 }
 
-function colorFor(person) {
-  const hue = hashString(person?.normalized || person?.sessionId || person?.nickname || "fiuma2") % 360;
-  return `hsl(${hue}, 78%, 56%)`;
-}
-
 function blockAvatar(person) {
   const value = (hashString(person?.normalized || person?.nickname || person?.sessionId || "fiuma2") % 12) + 1;
   return blockForNumber(value).src;
 }
 
+function colorFor(person) {
+  const hue = hashString(person?.normalized || person?.sessionId || person?.nickname || "fiuma2") % 360;
+  return `hsl(${hue}, 78%, 56%)`;
+}
+
+function buildTowerPlatforms() {
+  const platforms = [
+    { x: 92, y: BASE_Y, w: 296, h: 18, color: "#546a94", type: "base" },
+  ];
+
+  let currentY = BASE_Y - 88;
+  for (let i = 0; i < 8; i += 1) {
+    const width = i < 3 ? 164 : i < 6 ? 150 : 138;
+    let x = i % 2 === 0 ? 48 + i * 18 : 228 - i * 8;
+    x = Math.max(28, Math.min(WORLD_WIDTH - width - 28, x));
+    platforms.push({
+      x,
+      y: currentY,
+      w: width,
+      h: 18,
+      color: i % 2 === 0 ? "#6f82b9" : "#516b9a",
+      type: "normal",
+    });
+    currentY -= i < 4 ? 95 : 102;
+  }
+
+  return platforms;
+}
+
 function scenePeople() {
-  return state.people.filter((person) => (person.online || person.sessionId === state.me?.sessionId) && (person.sessionId === state.me?.sessionId || person.worldScene === WORLD_ID));
+  return state.people.filter(
+    (person) => (person.online || person.sessionId === state.me?.sessionId)
+      && (person.sessionId === state.me?.sessionId || person.worldScene === WORLD_ID),
+  );
 }
 
 function spawnFor(person) {
   const hash = hashString(person?.normalized || person?.sessionId || "fiuma2");
-  return landings[hash % landings.length];
+  return bottomSpawns[hash % bottomSpawns.length];
 }
 
 function playerPosition(person) {
@@ -149,7 +150,7 @@ function playerPosition(person) {
   if (person.worldScene === WORLD_ID && Number.isFinite(person.worldX) && Number.isFinite(person.worldY)) {
     return {
       x: clamp(Number(person.worldX), 0, WORLD_WIDTH - PLAYER_W),
-      y: clamp(Number(person.worldY), 0, GROUND_Y - PLAYER_H),
+      y: clamp(Number(person.worldY), -140, BASE_Y - PLAYER_H),
     };
   }
   return spawnFor(person);
@@ -159,20 +160,15 @@ function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function worldRects() {
-  return platforms;
-}
-
-function ladderAt(box) {
-  return ladders.find((ladder) => rectsOverlap(box, { x: ladder.x, y: ladder.y, w: 24, h: ladder.h })) || null;
+function currentViewHeight() {
+  return canvas.height / Math.max(1, (window.devicePixelRatio || 1));
 }
 
 function inputState() {
   return {
     left: state.mobile.left,
     right: state.mobile.right,
-    up: state.mobile.up,
-    down: state.mobile.down,
+    jump: state.mobile.jump,
   };
 }
 
@@ -187,12 +183,12 @@ function syncStatus() {
 }
 
 function centerCamera() {
-  const viewWidth = canvas.width / Math.max(1, (window.devicePixelRatio || 1));
-  state.cameraX = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth * 0.38, 0, WORLD_WIDTH - viewWidth);
+  state.cameraY = Math.min(0, state.mePos.y - 420);
 }
 
-function currentViewWidth() {
-  return canvas.width / Math.max(1, (window.devicePixelRatio || 1));
+function moveViewportTowardPlayer() {
+  const target = Math.min(0, state.mePos.y - 420);
+  state.cameraY += (target - state.cameraY) * 0.14;
 }
 
 function showPopup(person) {
@@ -213,20 +209,31 @@ function openConversation(person) {
     kind: person.sessionId === state.me?.sessionId ? "self" : "direct",
     peer: person,
   });
+
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    const chatPanel = document.getElementById("chat-panel");
+    if (chatPanel) {
+      chatPanel.scrollIntoView({ block: "start", behavior: "smooth" });
+      window.requestAnimationFrame(() => document.getElementById("message-input")?.focus());
+      if (location.hash !== "#chat-panel") {
+        history.replaceState(null, "", "#chat-panel");
+      }
+    }
+  }
 }
 
 function syncPopup(person = state.people.find((item) => item.sessionId === state.popupSessionId)) {
   if (!popup || !person) return;
   const pos = playerPosition(person);
-  const screenX = pos.x - state.cameraX + PLAYER_W / 2;
-  const screenY = pos.y - 10;
+  const screenX = pos.x + PLAYER_W / 2;
+  const screenY = pos.y - state.cameraY - 10;
   const wrapRect = boardWrap.getBoundingClientRect();
   popup.hidden = false;
   popup.style.left = `${clamp(screenX, 52, wrapRect.width - 52)}px`;
   popup.style.top = `${clamp(screenY, 70, wrapRect.height - 18)}px`;
   popupAvatar.src = person.photoDataUrl || blockAvatar(person);
   popupName.textContent = person.sessionId === state.me?.sessionId ? `${person.nickname} (tú)` : person.nickname;
-  popupMeta.textContent = person.sessionId === state.me?.sessionId ? "Tu personaje" : person.online ? "En linea" : "Visto hace poco";
+  popupMeta.textContent = person.sessionId === state.me?.sessionId ? "Tu personaje" : person.online ? "En línea" : "Visto hace poco";
   popupChat.textContent = person.sessionId === state.me?.sessionId ? "Abrir contigo mismo" : "Chatear";
 }
 
@@ -244,12 +251,6 @@ function updatePresenceThrottle(force = false) {
   }).catch(() => {});
 }
 
-function moveViewportTowardPlayer() {
-  const viewWidth = currentViewWidth();
-  const target = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth * 0.38, 0, WORLD_WIDTH - viewWidth);
-  state.cameraX += (target - state.cameraX) * 0.14;
-}
-
 function applyHorizontal(dt, left, right) {
   if (left && !right) {
     state.vx = -MOVE_SPEED;
@@ -261,25 +262,25 @@ function applyHorizontal(dt, left, right) {
   state.mePos.x += state.vx * dt;
 }
 
-function applyVertical(dt, climbMode, up, down) {
-  if (climbMode) {
-    state.vy = 0;
-    if (up) state.mePos.y -= CLIMB_SPEED * dt;
-    if (down) state.mePos.y += CLIMB_SPEED * dt;
-    return;
+function applyVertical(dt, jumpPressed) {
+  if (jumpPressed && !state.upLatch && state.onGround) {
+    state.vy = -JUMP_SPEED;
+    state.onGround = false;
+    state.upLatch = true;
   }
+  if (!jumpPressed) state.upLatch = false;
 
   state.vy += GRAVITY * dt;
   state.mePos.y += state.vy * dt;
 }
 
 function resolveCollisions() {
-  const box = { x: state.mePos.x, y: state.mePos.y, w: PLAYER_W, h: PLAYER_H };
   state.onGround = false;
 
-  for (const solid of worldRects()) {
-    const currentBox = { x: state.mePos.x, y: state.mePos.y, w: PLAYER_W, h: PLAYER_H };
-    if (!rectsOverlap(currentBox, solid)) continue;
+  for (const solid of [ { x: -240, y: BASE_Y, w: 960, h: 80 }, ...towerPlatforms ]) {
+    const playerBox = { x: state.mePos.x, y: state.mePos.y, w: PLAYER_W, h: PLAYER_H };
+    if (!rectsOverlap(playerBox, solid)) continue;
+
     if (state.vy > 0) {
       state.mePos.y = solid.y - PLAYER_H - 0.1;
       state.vy = 0;
@@ -288,6 +289,7 @@ function resolveCollisions() {
       state.mePos.y = solid.y + solid.h + 0.1;
       state.vy = 0;
     }
+
     if (state.vx > 0) {
       state.mePos.x = solid.x - PLAYER_W - 0.1;
     } else if (state.vx < 0) {
@@ -297,48 +299,49 @@ function resolveCollisions() {
   }
 
   state.mePos.x = clamp(state.mePos.x, 0, WORLD_WIDTH - PLAYER_W);
-  state.mePos.y = clamp(state.mePos.y, -40, GROUND_Y - PLAYER_H);
+  state.mePos.y = clamp(state.mePos.y, -140, BASE_Y - PLAYER_H);
 }
 
-function update(dt) {
-  const { left, right, up, down } = inputState();
-  const box = { x: state.mePos.x, y: state.mePos.y, w: PLAYER_W, h: PLAYER_H };
-  const ladder = ladderAt(box);
-  const climbMode = Boolean(ladder && (up || down));
-  state.climbing = climbMode;
-
-  if (up && !state.upLatch && !climbMode && state.onGround) {
-    state.vy = -JUMP_SPEED;
-    state.onGround = false;
-    state.upLatch = true;
-  }
-  if (!up) state.upLatch = false;
-
-  if (climbMode) {
-    state.vx *= 0.9;
-    state.mePos.x = clamp(ladder.x + 12 - PLAYER_W / 2, 0, WORLD_WIDTH - PLAYER_W);
-    applyVertical(dt, true, up, down);
-  } else {
-    applyHorizontal(dt, left, right);
-    applyVertical(dt, false, up, down);
-    resolveCollisions();
-  }
-
-  state.mePos.x = clamp(state.mePos.x, 0, WORLD_WIDTH - PLAYER_W);
-  state.mePos.y = clamp(state.mePos.y, -40, GROUND_Y - PLAYER_H);
-
-  if (state.me) updatePresenceThrottle(false);
-  if (state.popupSessionId) {
-    const selected = state.people.find((person) => person.sessionId === state.popupSessionId);
-    if (selected) syncPopup(selected);
-  }
-  moveViewportTowardPlayer();
+function resetWorld(snapToBottom = true) {
+  state.mePos = snapToBottom ? { ...bottomSpawns[2] } : { ...state.mePos };
+  state.vx = 0;
+  state.vy = 0;
+  state.onGround = false;
+  state.cameraY = 0;
+  state.popupSessionId = "";
+  if (popup) popup.hidden = true;
+  if (state.me) updatePresenceThrottle(true);
   syncStatus();
 }
 
+function update(dt) {
+  const { left, right, jump } = inputState();
+  applyHorizontal(dt, left, right);
+  applyVertical(dt, jump);
+  resolveCollisions();
+
+  if (state.me) updatePresenceThrottle(false);
+
+  if (state.popupSessionId) {
+    const selected = state.people.find((person) => person.sessionId === state.popupSessionId);
+    if (selected) {
+      syncPopup(selected);
+    } else {
+      hidePopup();
+    }
+  }
+
+  moveViewportTowardPlayer();
+  syncStatus();
+
+  if (state.mePos.y - state.cameraY > currentViewHeight() + 90) {
+    resetWorld(true);
+  }
+}
+
 function drawBackground() {
-  const w = currentViewWidth();
-  const h = canvas.height / Math.max(1, (window.devicePixelRatio || 1));
+  const w = canvas.width / Math.max(1, (window.devicePixelRatio || 1));
+  const h = currentViewHeight();
   const gradient = ctx.createLinearGradient(0, 0, 0, h);
   gradient.addColorStop(0, "#263453");
   gradient.addColorStop(0.55, "#151b2a");
@@ -347,7 +350,7 @@ function drawBackground() {
   ctx.fillRect(0, 0, w, h);
 
   ctx.save();
-  ctx.translate(-state.cameraX * 0.22, 0);
+  ctx.translate(0, 0);
   for (let i = 0; i < 18; i += 1) {
     const x = i * 240 + 80;
     ctx.fillStyle = `rgba(255,255,255,${0.05 + (i % 4) * 0.015})`;
@@ -358,47 +361,110 @@ function drawBackground() {
   ctx.restore();
 }
 
-function drawWorld() {
-  const w = currentViewWidth();
-  const h = canvas.height / Math.max(1, (window.devicePixelRatio || 1));
+function drawPlatform(platform) {
+  const y = platform.y - state.cameraY;
+  if (y < -80 || y > currentViewHeight() + 100) return;
 
+  if (platform.type === "base") {
+    ctx.fillStyle = "#7f8fb4";
+    roundRect(platform.x, y, platform.w, platform.h, 8, true);
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(platform.x, y, platform.w, 4);
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(platform.x, y + platform.h - 3, platform.w, 3);
+    return;
+  }
+
+  ctx.fillStyle = platform.color;
+  roundRect(platform.x, y, platform.w, platform.h, 8, true);
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(platform.x, y, platform.w, 4);
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(platform.x, y + platform.h - 3, platform.w, 3);
+}
+
+function drawNumberBlock(x, y, w, h, value, fill, shadow, isHero = false, src = null) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = "rgba(0,0,0,0.28)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 8;
+  roundRect(0, 0, w, h, 10, true, fill);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.fillStyle = shadow;
+  ctx.fillRect(w * 0.2, h * 0.28, 4, 4);
+  ctx.fillRect(w * 0.65, h * 0.28, 4, 4);
+  ctx.fillRect(w * 0.28, h * 0.58, w * 0.44, 4);
+
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillRect(3, 3, w - 6, 7);
+
+  const image = src ? avatarImage(src) : null;
+  let drewImage = false;
+  if (image?.complete && image.naturalWidth) {
+    ctx.save();
+    roundRect(0, 0, w, h, 10, false);
+    ctx.clip();
+    ctx.drawImage(image, 0, 0, w, h);
+    ctx.restore();
+    drewImage = true;
+  }
+
+  if (!drewImage) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `700 ${Math.max(12, Math.min(18, h * 0.28))}px Trebuchet MS, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(value), w / 2, h / 2 + 1);
+  }
+
+  ctx.fillStyle = isHero ? "#fff" : "rgba(255,255,255,0.9)";
+  ctx.beginPath();
+  ctx.arc(w * 0.33, h * 0.36, 2.3, 0, Math.PI * 2);
+  ctx.arc(w * 0.67, h * 0.36, 2.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawPlayer(person) {
+  const pos = playerPosition(person);
+  const x = pos.x;
+  const y = pos.y - state.cameraY;
+  const isMe = person.sessionId === state.me?.sessionId;
+  const blockValue = (hashString(person?.normalized || person?.nickname || person?.sessionId || "fiuma2") % 12) + 1;
+  const fill = isMe ? "#5ad7ff" : colorFor(person);
+  const shadow = isMe ? "#053447" : "#332206";
+  const imageSrc = person.photoDataUrl || blockAvatar(person);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 11px Trebuchet MS, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(isMe ? `${person.nickname} (tú)` : person.nickname, x + PLAYER_W / 2, y - 10);
+
+  drawNumberBlock(x, y, PLAYER_W, PLAYER_H, blockValue, fill, shadow, isMe, imageSrc);
+}
+
+function drawWorld() {
   drawBackground();
 
   ctx.save();
-  ctx.translate(-state.cameraX, 0);
+  ctx.translate(0, 0);
 
   ctx.fillStyle = "#1b2333";
-  ctx.fillRect(0, GROUND_Y, WORLD_WIDTH, WORLD_HEIGHT - GROUND_Y);
+  ctx.fillRect(0, BASE_Y, WORLD_WIDTH, currentViewHeight() - BASE_Y + 120);
   ctx.fillStyle = "#2d394d";
-  ctx.fillRect(0, GROUND_Y - 10, WORLD_WIDTH, 10);
+  ctx.fillRect(0, BASE_Y - 10, WORLD_WIDTH, 10);
 
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 22; i += 1) {
-    const x = i * 180 + 60;
-    ctx.fillStyle = i % 3 === 0 ? "#7ca8ff" : i % 3 === 1 ? "#63e6be" : "#ffd166";
-    roundRect(x, 150 + (i % 4) * 28, 34, 34, 10, true);
-  }
-  ctx.restore();
-
-  for (const platform of platforms.slice(1)) {
-    ctx.fillStyle = "#34425a";
-    ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.fillRect(platform.x, platform.y, platform.w, 4);
+  for (const platform of towerPlatforms) {
+    drawPlatform(platform);
   }
 
-  for (const ladder of ladders) {
-    ctx.fillStyle = "rgba(99,230,190,0.24)";
-    ctx.fillRect(ladder.x + 10, ladder.y, 4, ladder.h);
-    ctx.fillRect(ladder.x + 2, ladder.y + 8, 20, 4);
-    ctx.fillRect(ladder.x + 2, ladder.y + 34, 20, 4);
-    ctx.fillRect(ladder.x + 2, ladder.y + 60, 20, 4);
-  }
-
-  const visible = scenePeople();
+  const visible = scenePeople().slice().sort((a, b) => playerPosition(a).y - playerPosition(b).y);
   for (const person of visible) {
-    drawCharacter(person);
+    drawPlayer(person);
   }
 
   ctx.restore();
@@ -410,14 +476,14 @@ function drawWorld() {
 
   ctx.save();
   ctx.fillStyle = "rgba(8, 12, 20, 0.56)";
-  ctx.fillRect(14, 14, 310, 104);
+  ctx.fillRect(14, 14, 324, 104);
   ctx.fillStyle = "#f5f7ff";
   ctx.font = "700 18px Trebuchet MS, sans-serif";
   ctx.textAlign = "left";
   ctx.fillText("Mundo Fiuma 2", 26, 42);
   ctx.font = "600 15px Trebuchet MS, sans-serif";
-  ctx.fillText(`Escena: ${WORLD_ID}`, 26, 68);
-  ctx.fillText(`Toca un personaje para chatear`, 26, 92);
+  ctx.fillText(`Escena: torre Numberblocks`, 26, 68);
+  ctx.fillText(`Toca un bloque para chatear`, 26, 92);
   ctx.restore();
 
   if (state.me) {
@@ -425,62 +491,8 @@ function drawWorld() {
   }
 }
 
-function drawCharacter(person) {
-  const pos = playerPosition(person);
-  const screenX = pos.x;
-  const screenY = pos.y;
-  const isMe = person.sessionId === state.me?.sessionId;
-  const name = isMe ? `${person.nickname} (tú)` : person.nickname;
-  const blockValue = (hashString(person?.normalized || person?.nickname || person?.sessionId || "fiuma2") % 12) + 1;
-  const blockW = 46;
-  const blockH = 56;
-  const blockX = screenX - 5;
-  const blockY = screenY + 18;
-  const icon = avatarImage(person.photoDataUrl || blockAvatar(person));
-  const labelY = blockY - 10;
-
-  ctx.save();
-  ctx.translate(-1, 0);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "700 12px Trebuchet MS, sans-serif";
-  ctx.fillText(name, blockX + blockW / 2, labelY);
-
-  ctx.shadowColor = "rgba(0,0,0,0.26)";
-  ctx.shadowBlur = 18;
-  ctx.shadowOffsetY = 8;
-  ctx.fillStyle = "rgba(0,0,0,0.18)";
-  roundRect(blockX + 3, blockY + 4, blockW, blockH, 14, true);
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  ctx.fillStyle = isMe ? "#5ad7ff" : colorFor(person);
-  roundRect(blockX, blockY, blockW, blockH, 14, true);
-  ctx.fillStyle = "rgba(255,255,255,0.16)";
-  roundRect(blockX + 3, blockY + 3, blockW - 6, 10, 8, true);
-
-  if (icon?.complete && icon.naturalWidth) {
-    ctx.save();
-    roundRect(blockX + 4, blockY + 6, blockW - 8, blockH - 10, 12, false);
-    ctx.clip();
-    ctx.drawImage(icon, blockX + 4, blockY + 6, blockW - 8, blockH - 10);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = "#fff";
-    ctx.font = "800 16px Trebuchet MS, sans-serif";
-    ctx.fillText(String(blockValue), blockX + blockW / 2, blockY + blockH / 2 + 6);
-  }
-
-  ctx.fillStyle = "rgba(255,255,255,0.88)";
-  ctx.beginPath();
-  ctx.arc(blockX + 13, blockY + 18, 2.5, 0, Math.PI * 2);
-  ctx.arc(blockX + 31, blockY + 18, 2.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function roundRect(x, y, w, h, r, fill = false) {
+function roundRect(x, y, w, h, r, fill = false, fillStyle = null) {
+  if (fillStyle) ctx.fillStyle = fillStyle;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -503,8 +515,8 @@ function resize() {
 function pointerToWorld(event) {
   const rect = canvas.getBoundingClientRect();
   return {
-    x: event.clientX - rect.left + state.cameraX,
-    y: event.clientY - rect.top,
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top + state.cameraY,
   };
 }
 
@@ -526,11 +538,18 @@ function bindControls() {
   moveButtons.forEach((button) => {
     const dir = button.dataset.move;
     const press = () => {
-      state.mobile[dir] = true;
-      if (dir === "up" || dir === "down") setTimeout(() => (state.mobile[dir] = false), 120);
+      if (dir === "up") state.mobile.jump = true;
+      if (dir === "left") state.mobile.left = true;
+      if (dir === "right") state.mobile.right = true;
+      if (dir === "down") state.mobile.jump = true;
+      if (dir === "up" || dir === "down") setTimeout(() => {
+        state.mobile.jump = false;
+      }, 140);
     };
     const release = () => {
-      state.mobile[dir] = false;
+      if (dir === "left") state.mobile.left = false;
+      if (dir === "right") state.mobile.right = false;
+      if (dir === "up" || dir === "down") state.mobile.jump = false;
     };
     button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
@@ -547,6 +566,10 @@ function bindControls() {
     hidePopup();
   });
 
+  resetButton?.addEventListener("click", () => {
+    resetWorld(true);
+  });
+
   popupClose?.addEventListener("click", hidePopup);
   popupChat?.addEventListener("click", () => {
     const selected = state.people.find((person) => person.sessionId === state.popupSessionId);
@@ -561,11 +584,11 @@ function bindControls() {
 
 function bindMobileJumpLinks() {
   if (!window.matchMedia("(max-width: 900px)").matches) return;
-  const target = document.querySelector(location.hash || "#fiuma2-world");
+  const target = document.querySelector(location.hash || "#fiuma2-stage");
   if (target) {
     window.requestAnimationFrame(() => target.scrollIntoView({ block: "start", behavior: "smooth" }));
   } else {
-    window.requestAnimationFrame(() => document.getElementById("fiuma2-world")?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    window.requestAnimationFrame(() => document.getElementById("fiuma2-stage")?.scrollIntoView({ block: "start", behavior: "smooth" }));
   }
 }
 
@@ -583,7 +606,7 @@ async function bootstrap() {
   bindMobileJumpLinks();
 
   state.me = await bootstrapProfile();
-  state.mePos = { ...landings[0] };
+  state.mePos = { ...bottomSpawns[2] };
   state.positionInitialized = false;
 
   peopleUnsub = listActivePeople((people) => {
@@ -593,7 +616,7 @@ async function bootstrap() {
       if (liveMe && liveMe.worldScene === WORLD_ID && Number.isFinite(liveMe.worldX) && Number.isFinite(liveMe.worldY)) {
         state.mePos = {
           x: clamp(Number(liveMe.worldX), 0, WORLD_WIDTH - PLAYER_W),
-          y: clamp(Number(liveMe.worldY), 0, GROUND_Y - PLAYER_H),
+          y: clamp(Number(liveMe.worldY), -140, BASE_Y - PLAYER_H),
         };
         state.positionInitialized = true;
       }
@@ -637,45 +660,6 @@ async function bootstrap() {
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
-}
-
-function update(dt) {
-  const { left, right, up, down } = inputState();
-  const box = { x: state.mePos.x, y: state.mePos.y, w: PLAYER_W, h: PLAYER_H };
-  const ladder = ladderAt(box);
-  const climbMode = Boolean(ladder && (up || down));
-  state.climbing = climbMode;
-
-  if (up && !state.upLatch && !climbMode && state.onGround) {
-    state.vy = -JUMP_SPEED;
-    state.onGround = false;
-    state.upLatch = true;
-  }
-  if (!up) state.upLatch = false;
-
-  if (climbMode) {
-    state.vx *= 0.9;
-    state.vy = 0;
-    state.mePos.x = clamp(ladder.x + 12 - PLAYER_W / 2, 0, WORLD_WIDTH - PLAYER_W);
-    if (up) state.mePos.y -= CLIMB_SPEED * dt;
-    if (down) state.mePos.y += CLIMB_SPEED * dt;
-  } else {
-    applyHorizontal(dt, left, right);
-    applyVertical(dt, false, up, down);
-    resolveCollisions();
-  }
-
-  state.mePos.x = clamp(state.mePos.x, 0, WORLD_WIDTH - PLAYER_W);
-  state.mePos.y = clamp(state.mePos.y, -40, GROUND_Y - PLAYER_H);
-
-  if (state.popupSessionId) {
-    const selected = state.people.find((person) => person.sessionId === state.popupSessionId);
-    if (selected) {
-      syncPopup(selected);
-    } else {
-      hidePopup();
-    }
-  }
 }
 
 bootstrap().catch((error) => {
