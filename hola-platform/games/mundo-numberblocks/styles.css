@@ -55,6 +55,9 @@
 .mobile-controls {
   display: none;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+    ". up ."
+    "left reset right";
   gap: 10px;
 }
 
@@ -67,6 +70,11 @@
   font-size: 1.35rem;
   padding: 16px 0;
 }
+
+.mobile-controls button[data-action="jump"] { grid-area: up; }
+.mobile-controls button[data-action="left"] { grid-area: left; }
+.mobile-controls button[data-action="right"] { grid-area: right; }
+.mobile-controls button[data-reset] { grid-area: reset; background: rgba(99, 230, 190, 0.20); }
 
 @media (max-width: 900px) {
   .hud {

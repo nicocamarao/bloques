@@ -43,7 +43,7 @@
           <section class="game-stage stack">
             <div class="scoreline">
               <button class="game-action" id="reset-button" type="button">Reiniciar</button>
-              <span class="pill">Click y tap solamente</span>
+              <span class="pill">Presiona para Reiniciar</span>
             </div>
             <div class="board-wrap">
               <canvas id="game" width="960" height="420" aria-label="Jump Neón"></canvas>
@@ -134,7 +134,7 @@
         const touchingHazard = hazardIndex % 3 === 0 && state.y + 42 >= groundY + 42;
         if (touchingHazard && !segment) {
           state.alive = false;
-          statusPill.textContent = "Perdiste";
+          statusPill.textContent = "Presiona para Reiniciar";
           if (!state.scored) {
             state.scored = true;
             window.recordGameScore?.("jump-neon", state.score * 10 + state.combo, { label: "Jump Neón" });
@@ -164,7 +164,7 @@
           state.onGround = false;
           if (state.y > canvas.height + 60) {
             state.alive = false;
-            statusPill.textContent = "Perdiste";
+            statusPill.textContent = "Presiona para Reiniciar";
             if (!state.scored) {
               state.scored = true;
               window.recordGameScore?.("jump-neon", state.score * 10 + state.combo, { label: "Jump Neón" });
@@ -250,7 +250,7 @@
           ctx.textAlign = "center";
           ctx.fillText("Perdiste", w / 2, h / 2 - 8);
           ctx.font = "600 18px sans-serif";
-          ctx.fillText("Toca reiniciar y vuelve a intentar el combo", w / 2, h / 2 + 24);
+          ctx.fillText("Presiona para Reiniciar", w / 2, h / 2 + 24);
         }
       }
 
@@ -262,7 +262,13 @@
         requestAnimationFrame(loop);
       }
 
-      canvas.addEventListener("pointerdown", jump);
+      canvas.addEventListener("pointerdown", () => {
+        if (!state.alive) {
+          reset();
+          return;
+        }
+        jump();
+      });
       resetButton.addEventListener("click", reset);
       reset();
       requestAnimationFrame(loop);

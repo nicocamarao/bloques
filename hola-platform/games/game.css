@@ -130,6 +130,10 @@
 .touch-pad {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    ". up ."
+    "left reset right"
+    ". down .";
   gap: 8px;
 }
 
@@ -145,6 +149,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.touch-pad [data-dir="up"] { grid-area: up; }
+.touch-pad [data-dir="left"] { grid-area: left; }
+.touch-pad [data-dir="right"] { grid-area: right; }
+.touch-pad [data-dir="down"] { grid-area: down; }
+.touch-pad [data-reset] { grid-area: reset; }
+
+.touch-pad [data-reset] {
+  font-weight: 900;
+  background: linear-gradient(180deg, rgba(99, 230, 190, 0.22), rgba(99, 230, 190, 0.10));
+  border: 1px solid rgba(99, 230, 190, 0.24);
 }
 
 .game-note {

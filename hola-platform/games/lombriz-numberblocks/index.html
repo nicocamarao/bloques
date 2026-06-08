@@ -42,16 +42,17 @@
           <section class="game-stage stack">
             <div class="scoreline">
               <button class="game-action" id="reset-button" type="button">Reiniciar</button>
-              <span class="pill">Movimiento lento</span>
+              <span class="pill">Presiona para Reiniciar</span>
             </div>
             <div class="board-wrap">
               <canvas id="game" width="600" height="600" aria-label="Lombriz Numberblocks"></canvas>
             </div>
             <div class="touch-pad" aria-label="Controles táctiles">
-              <button class="tile" data-dir="up" type="button">Arriba</button>
-              <button class="tile" data-dir="left" type="button">Izquierda</button>
-              <button class="tile" data-dir="down" type="button">Abajo</button>
-              <button class="tile" data-dir="right" type="button">Derecha</button>
+              <button class="tile" data-dir="up" type="button" aria-label="Arriba">↑</button>
+              <button class="tile" data-dir="left" type="button" aria-label="Izquierda">←</button>
+              <button class="tile" data-reset type="button" aria-label="Reiniciar">↺</button>
+              <button class="tile" data-dir="right" type="button" aria-label="Derecha">→</button>
+              <button class="tile" data-dir="down" type="button" aria-label="Abajo">↓</button>
             </div>
           </section>
         </section>
@@ -127,7 +128,7 @@
         const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
         if (head.x < 0 || head.y < 0 || head.x >= gridSize || head.y >= gridSize || snake.some((segment) => segment.x === head.x && segment.y === head.y)) {
           alive = false;
-          statusPill.textContent = "Perdiste";
+          statusPill.textContent = "Presiona para Reiniciar";
           window.recordGameScore?.("lombriz-numberblocks", Math.max(bestScore, score), { label: "Lombriz Numberblocks" });
           return;
         }
@@ -198,7 +199,18 @@
           ctx.fillStyle = "#ffffff";
           ctx.font = "800 26px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(restMessage, canvas.width / 2, canvas.height / 2);
+          ctx.fillText(restMessage || "Presiona para Reiniciar", canvas.width / 2, canvas.height / 2);
+        }
+
+        if (!alive) {
+          ctx.fillStyle = "rgba(0,0,0,0.46)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "800 30px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Perdiste", canvas.width / 2, canvas.height / 2 - 10);
+          ctx.font = "600 18px sans-serif";
+          ctx.fillText("Presiona para Reiniciar", canvas.width / 2, canvas.height / 2 + 22);
         }
       }
 
@@ -217,6 +229,10 @@
       }
 
       canvas.addEventListener("pointerdown", (event) => {
+        if (!alive) {
+          reset();
+          return;
+        }
         const rect = canvas.getBoundingClientRect();
         const dx = event.clientX - rect.left - rect.width / 2;
         const dy = event.clientY - rect.top - rect.height / 2;
@@ -227,8 +243,12 @@
         }
       });
 
-      document.querySelectorAll("[data-dir]").forEach((button) => {
+      document.querySelectorAll("[data-dir], [data-reset]").forEach((button) => {
         button.addEventListener("click", () => {
+          if (button.hasAttribute("data-reset")) {
+            reset();
+            return;
+          }
           const dir = button.dataset.dir;
           changeDirection(
             dir === "up" ? { x: 0, y: -1 } :

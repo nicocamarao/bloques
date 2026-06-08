@@ -501,7 +501,12 @@
     keys.delete(e.code);
   });
 
-  document.querySelectorAll("[data-action]").forEach((button) => {
+  document.querySelectorAll("[data-action], [data-reset]").forEach((button) => {
+    if (button.hasAttribute("data-reset")) {
+      button.addEventListener("pointerdown", () => resetGame());
+      return;
+    }
+
     const action = button.dataset.action;
     const down = () => {
       mobile[action] = true;

@@ -22,14 +22,16 @@
             <div class="controls">
               <span>Toques y arrastre en móvil</span>
               <span>No hace falta teclado</span>
+              <span>Presiona para Reiniciar</span>
               <span>Meta: 10, 20, 30, 40 y 50</span>
             </div>
           </header>
           <canvas id="game" aria-label="Juego Mundo Numberblocks"></canvas>
           <section class="mobile-controls" aria-hidden="true">
-            <button data-action="left" type="button">◀</button>
-            <button data-action="jump" type="button">⤒</button>
-            <button data-action="right" type="button">▶</button>
+            <button data-action="jump" type="button" aria-label="Arriba">▲</button>
+            <button data-action="left" type="button" aria-label="Izquierda">◀</button>
+            <button data-reset type="button" aria-label="Reiniciar">↺</button>
+            <button data-action="right" type="button" aria-label="Derecha">▶</button>
           </section>
         </section>
       </main>
