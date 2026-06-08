@@ -188,7 +188,7 @@ function syncStatus() {
 
 function centerCamera() {
   const viewWidth = canvas.width / Math.max(1, (window.devicePixelRatio || 1));
-  state.cameraX = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth / 2, 0, WORLD_WIDTH - viewWidth);
+  state.cameraX = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth * 0.38, 0, WORLD_WIDTH - viewWidth);
 }
 
 function currentViewWidth() {
@@ -246,15 +246,18 @@ function updatePresenceThrottle(force = false) {
 
 function moveViewportTowardPlayer() {
   const viewWidth = currentViewWidth();
-  const target = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth / 2, 0, WORLD_WIDTH - viewWidth);
+  const target = clamp(state.mePos.x + PLAYER_W / 2 - viewWidth * 0.38, 0, WORLD_WIDTH - viewWidth);
   state.cameraX += (target - state.cameraX) * 0.14;
 }
 
 function applyHorizontal(dt, left, right) {
-  if (left) state.vx -= 1800 * dt;
-  if (right) state.vx += 1800 * dt;
-  if (!left && !right) state.vx *= state.onGround ? 0.82 : 0.94;
-  state.vx = clamp(state.vx, -MOVE_SPEED, MOVE_SPEED);
+  if (left && !right) {
+    state.vx = -MOVE_SPEED;
+  } else if (right && !left) {
+    state.vx = MOVE_SPEED;
+  } else {
+    state.vx *= state.onGround ? 0.82 : 0.94;
+  }
   state.mePos.x += state.vx * dt;
 }
 
@@ -369,6 +372,15 @@ function drawWorld() {
   ctx.fillStyle = "#2d394d";
   ctx.fillRect(0, GROUND_Y - 10, WORLD_WIDTH, 10);
 
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  for (let i = 0; i < 22; i += 1) {
+    const x = i * 180 + 60;
+    ctx.fillStyle = i % 3 === 0 ? "#7ca8ff" : i % 3 === 1 ? "#63e6be" : "#ffd166";
+    roundRect(x, 150 + (i % 4) * 28, 34, 34, 10, true);
+  }
+  ctx.restore();
+
   for (const platform of platforms.slice(1)) {
     ctx.fillStyle = "#34425a";
     ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
@@ -428,6 +440,7 @@ function drawCharacter(person) {
   const labelY = blockY - 10;
 
   ctx.save();
+  ctx.translate(-1, 0);
   ctx.textAlign = "center";
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 12px Trebuchet MS, sans-serif";
@@ -519,10 +532,14 @@ function bindControls() {
     const release = () => {
       state.mobile[dir] = false;
     };
-    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      press();
+    });
     button.addEventListener("pointerup", release);
     button.addEventListener("pointerleave", release);
     button.addEventListener("pointercancel", release);
+    button.addEventListener("contextmenu", (event) => event.preventDefault());
   });
 
   centerButton?.addEventListener("click", () => {

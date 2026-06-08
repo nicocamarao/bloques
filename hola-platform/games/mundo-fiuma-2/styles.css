@@ -43,9 +43,9 @@
 .fiuma2-board {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 7.6;
-  min-height: 52vh;
-  max-height: 70vh;
+  aspect-ratio: 4 / 5.8;
+  min-height: 58vh;
+  max-height: 78vh;
   touch-action: none;
   background:
     linear-gradient(180deg, rgba(124, 168, 255, 0.08), rgba(99, 230, 190, 0.04)),
@@ -155,8 +155,8 @@
   }
 
   .fiuma2-board {
-    min-height: 42vh;
-    aspect-ratio: 16 / 8.8;
+    min-height: 54vh;
+    aspect-ratio: 4 / 6.2;
   }
 
   .fiuma2-popup {
