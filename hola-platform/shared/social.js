@@ -90,6 +90,14 @@ function leaderboardRef(gameId) {
   return ref(db, `chat/leaderboards/${gameId}`);
 }
 
+function contactsRef(normalized) {
+  return ref(db, `chat/contacts/${normalized}`);
+}
+
+function contactsRootRef() {
+  return ref(db, "chat/contacts");
+}
+
 function getConversationId(conversation, me) {
   if (!me?.sessionId) return null;
   if (!conversation || conversation.kind === "general") return "general";
@@ -171,6 +179,52 @@ async function persistProfile(profile) {
   });
 }
 
+async function renameContacts(oldProfile, newProfile) {
+  const snapshot = await get(contactsRootRef());
+  const contacts = snapshot.val() || {};
+  const updates = {};
+  const nowTs = now();
+
+  for (const [ownerNormalized, contactMap] of Object.entries(contacts)) {
+    if (!contactMap) continue;
+
+    if (ownerNormalized === oldProfile.normalized) {
+      const renamedMap = {};
+      for (const [contactNormalized, record] of Object.entries(contactMap)) {
+        if (!record) continue;
+        const nextNormalized = contactNormalized === oldProfile.normalized ? newProfile.normalized : contactNormalized;
+        renamedMap[nextNormalized] = {
+          ...record,
+          contactNormalized: nextNormalized,
+          contactNickname: contactNormalized === oldProfile.normalized ? newProfile.nickname : record.contactNickname,
+          contactPhotoDataUrl: contactNormalized === oldProfile.normalized ? (newProfile.photoDataUrl || "") : (record.contactPhotoDataUrl || ""),
+          updatedAt: nowTs,
+        };
+      }
+      updates[`chat/contacts/${newProfile.normalized}`] = renamedMap;
+      updates[`chat/contacts/${ownerNormalized}`] = null;
+      continue;
+    }
+
+    if (contactMap[oldProfile.normalized]) {
+      const nextMap = { ...contactMap };
+      nextMap[newProfile.normalized] = {
+        ...contactMap[oldProfile.normalized],
+        contactNormalized: newProfile.normalized,
+        contactNickname: newProfile.nickname,
+        contactPhotoDataUrl: newProfile.photoDataUrl || "",
+        updatedAt: nowTs,
+      };
+      delete nextMap[oldProfile.normalized];
+      updates[`chat/contacts/${ownerNormalized}`] = nextMap;
+    }
+  }
+
+  if (Object.keys(updates).length) {
+    await update(ref(db), updates);
+  }
+}
+
 export async function bootstrapProfile() {
   if (profileState) return profileState;
 
@@ -222,6 +276,12 @@ export async function changeProfile({ nickname, photoDataUrl, current }) {
     if (!reserved) {
       throw new Error("Ese nickname ya está en uso.");
     }
+    await renameContacts(base, {
+      ...base,
+      nickname: nextNickname,
+      normalized: nextNormalized,
+      photoDataUrl: photoDataUrl || base.photoDataUrl || "",
+    });
     await releaseNickname(base.normalized, base.sessionId);
   }
 
@@ -236,6 +296,48 @@ export async function changeProfile({ nickname, photoDataUrl, current }) {
   await persistProfile(profileState);
   notifyProfile();
   return profileState;
+}
+
+export function watchContacts(normalized, callback) {
+  if (!normalized) {
+    callback([]);
+    return () => {};
+  }
+
+  return onValue(contactsRef(normalized), (snapshot) => {
+    const rows = Object.entries(snapshot.val() || {})
+      .map(([contactNormalized, row]) => ({
+        contactNormalized,
+        contactNickname: displayNickname(row.contactNickname || contactNormalized),
+        contactPhotoDataUrl: row.contactPhotoDataUrl || "",
+        createdAt: Number(row.createdAt || 0),
+        updatedAt: Number(row.updatedAt || 0),
+      }))
+      .sort((a, b) => b.updatedAt - a.updatedAt || b.createdAt - a.createdAt);
+    callback(rows);
+  });
+}
+
+export async function toggleContact(ownerProfile, targetProfile) {
+  const owner = ownerProfile || profileState || (await bootstrapProfile());
+  if (!owner?.normalized || !targetProfile?.normalized) return;
+  if (owner.normalized === targetProfile.normalized) return;
+
+  const itemRef = ref(db, `chat/contacts/${owner.normalized}/${targetProfile.normalized}`);
+  const snapshot = await get(itemRef);
+  if (snapshot.exists()) {
+    await set(itemRef, null);
+    return;
+  }
+
+  const nowTs = now();
+  await set(itemRef, {
+    contactNormalized: targetProfile.normalized,
+    contactNickname: targetProfile.nickname || targetProfile.normalized,
+    contactPhotoDataUrl: targetProfile.photoDataUrl || "",
+    createdAt: nowTs,
+    updatedAt: nowTs,
+  });
 }
 
 export async function setPresenceHeartbeat(profile = profileState, options = {}) {

@@ -8,7 +8,9 @@ import {
   sendMessage,
   setCurrentConversation,
   setPresenceHeartbeat,
+  toggleContact,
   watchConversation,
+  watchContacts,
   watchLeaderboard,
   watchRecentThreads,
   watchUnreadCount,
@@ -48,6 +50,7 @@ const slots = {
 const state = {
   me: null,
   people: [],
+  contacts: [],
   recentThreads: [],
   currentConversation: { kind: "general" },
   messages: [],
@@ -60,6 +63,7 @@ let peopleUnsub = null;
 let unreadUnsub = null;
 let recentUnsub = null;
 let leaderboardUnsub = null;
+let contactsUnsub = null;
 let heartbeatTimer = null;
 
 function avatarFallback(name) {
@@ -81,6 +85,16 @@ function avatarFallback(name) {
 
 function avatarSource(person) {
   return person?.photoDataUrl || avatarFallback(person?.nickname || "P");
+}
+
+function friendshipIcon(active = false) {
+  const stroke = active ? "#63e6be" : "#7ca8ff";
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M16 11h6M19 8v6M8.5 11.5A3.5 3.5 0 1 0 8.5 4.5a3.5 3.5 0 0 0 0 7Z" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3.5 19c.9-3 3.2-4.5 5-4.5s4.1 1.5 5 4.5" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  `;
 }
 
 function initBackgroundCarousel() {
@@ -194,6 +208,11 @@ function renderSidebar() {
       <button class="pill" id="general-button" type="button">General</button>
       <button class="pill" id="self-button" type="button">Contigo mismo</button>
       <input id="people-search" class="chat-search" placeholder="Buscar nickname..." autocomplete="off">
+      <div class="contact-section">
+        <strong>Contactos fijados</strong>
+        <ul id="contacts-list" class="people-list"></ul>
+      </div>
+      <strong class="people-heading">Personas conectadas</strong>
       <ul id="people-list" class="people-list"></ul>
       <div class="recent-wrap">
         <strong>Chats recientes</strong>
@@ -254,6 +273,7 @@ function els() {
     profileClose: document.getElementById("profile-close"),
     profileModalAvatar: document.getElementById("profile-modal-avatar"),
     profileEditOpen: document.getElementById("profile-edit-open"),
+    contactsList: document.getElementById("contacts-list"),
     peopleList: document.getElementById("people-list"),
     recentThreads: document.getElementById("recent-threads"),
     rankingList: document.getElementById("ranking-list"),
@@ -294,15 +314,18 @@ function setConversation(conversation) {
   if (conversationTitle) conversationTitle.textContent = name;
 }
 
-function renderPeople() {
-  const { peopleList, liveCount } = els();
-  if (!peopleList) return;
-  const sorted = listActivePeople(state.people, state.me?.sessionId);
-  const query = (els().peopleSearch?.value || "").trim().toLowerCase();
-  if (liveCount) liveCount.textContent = `${sorted.filter((person) => person.online).length} activos`;
+function livePersonByNormalized(normalized) {
+  return state.people.find((person) => person.normalized === normalized) || null;
+}
 
-  const currentSessionId = state.currentConversation?.peer?.sessionId || state.currentConversation?.sessionId || "";
-  peopleList.innerHTML = "";
+function contactByNormalized(normalized) {
+  return state.contacts.find((contact) => contact.contactNormalized === normalized) || null;
+}
+
+function renderContacts() {
+  const { contactsList } = els();
+  if (!contactsList) return;
+  contactsList.innerHTML = "";
 
   if (state.me) {
     const li = document.createElement("li");
@@ -317,11 +340,46 @@ function renderPeople() {
       </button>
     `;
     li.querySelector("button").addEventListener("click", () => openConversation({ kind: "self" }));
-    peopleList.appendChild(li);
+    contactsList.appendChild(li);
   }
+
+  state.contacts.forEach((contact) => {
+    const live = livePersonByNormalized(contact.contactNormalized);
+    const display = live || {
+      normalized: contact.contactNormalized,
+      nickname: contact.contactNickname,
+      photoDataUrl: contact.contactPhotoDataUrl,
+      online: false,
+    };
+    const li = document.createElement("li");
+    li.className = state.currentConversation?.peer?.normalized === display.normalized ? "current" : "";
+    li.innerHTML = `
+      <button type="button" class="person">
+        <img class="avatar" src="${avatarSource(display)}" alt="">
+        <span>
+          <strong>${display.nickname}</strong>
+          <span>${display.online ? "en línea" : "contacto fijado"}</span>
+        </span>
+      </button>
+    `;
+    li.querySelector("button").addEventListener("click", () => openConversation({ kind: "direct", peer: display }));
+    contactsList.appendChild(li);
+  });
+}
+
+function renderPeople() {
+  const { peopleList, liveCount } = els();
+  if (!peopleList) return;
+  const sorted = listActivePeople(state.people, state.me?.sessionId);
+  const query = (els().peopleSearch?.value || "").trim().toLowerCase();
+  if (liveCount) liveCount.textContent = `${sorted.filter((person) => person.online).length} activos`;
+
+  const currentSessionId = state.currentConversation?.peer?.sessionId || state.currentConversation?.sessionId || "";
+  peopleList.innerHTML = "";
 
   sorted
     .filter((person) => person.sessionId !== state.me?.sessionId)
+    .filter((person) => !contactByNormalized(person.normalized))
     .filter((person) => !query || person.nickname.toLowerCase().includes(query))
     .forEach((person) => {
       const li = document.createElement("li");
@@ -334,8 +392,12 @@ function renderPeople() {
             <span>${person.online ? "en línea" : "visto hace poco"}</span>
           </span>
         </button>
+        <button type="button" class="contact-toggle" aria-label="Fijar contacto">${friendshipIcon(false)}</button>
       `;
-      li.querySelector("button").addEventListener("click", () => openConversation({ kind: "direct", peer: person }));
+      li.querySelector(".person").addEventListener("click", () => openConversation({ kind: "direct", peer: person }));
+      li.querySelector(".contact-toggle").addEventListener("click", async () => {
+        await toggleContact(state.me, person);
+      });
       peopleList.appendChild(li);
     });
 }
@@ -566,8 +628,15 @@ async function bootstrap() {
 
   peopleUnsub = listActivePeople((people) => {
     state.people = people;
+    renderContacts();
     renderPeople();
     renderRecentThreads();
+  });
+
+  contactsUnsub = watchContacts(state.me.normalized, (contacts) => {
+    state.contacts = contacts;
+    renderContacts();
+    renderPeople();
   });
 
   recentUnsub = watchRecentThreads(state.me, (threads) => {
@@ -592,8 +661,17 @@ async function bootstrap() {
   }, 30_000);
 
   onProfileChange((profile) => {
+    const previousNormalized = state.me?.normalized;
     state.me = profile;
     syncProfileUI();
+    if (profile.normalized && profile.normalized !== previousNormalized) {
+      if (contactsUnsub) contactsUnsub();
+      contactsUnsub = watchContacts(profile.normalized, (contacts) => {
+        state.contacts = contacts;
+        renderContacts();
+        renderPeople();
+      });
+    }
   });
 
   const activePage = pageId();
