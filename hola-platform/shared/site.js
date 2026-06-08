@@ -17,24 +17,26 @@ import { blockForNumber } from "./numberblocks.js";
 
 window.recordGameScore = window.recordGameScore || recordScore;
 
+const resolveHref = (path) => new URL(path, import.meta.url).href;
+
 const GAMES = [
-  { id: "home", label: "Inicio", href: "/hola-platform/index.html" },
-  { id: "mini-territorio", label: "Mini territorio de amigos", href: "/hola-platform/games/mini-territorio/index.html" },
-  { id: "mundo-numberblocks", label: "Mundo Numberblocks", href: "/hola-platform/games/mundo-numberblocks/index.html" },
-  { id: "numberblocks-subida", label: "Numberblocks Subida", href: "/hola-platform/games/numberblocks-subida/index.html" },
-  { id: "memory-numberblocks", label: "Memory de Numberblocks", href: "/hola-platform/games/memory-numberblocks/index.html" },
-  { id: "memory-numberblocks-dificil", label: "Memory nivel dificil", href: "/hola-platform/games/memory-numberblocks-dificil/index.html" },
-  { id: "eco-numberblocks", label: "Eco Numberblocks", href: "/hola-platform/games/eco-numberblocks/index.html" },
-  { id: "tateti", label: "Tatetí Numberblocks", href: "/hola-platform/games/tateti/index.html" },
-  { id: "torre-numberblocks", label: "Torre Numberblocks", href: "/hola-platform/games/torre-numberblocks/index.html" },
-  { id: "puentes-numberblocks", label: "Puentes Numberblocks", href: "/hola-platform/games/puentes-numberblocks/index.html" },
-  { id: "copica-numberblocks", label: "Copica Numberblocks", href: "/hola-platform/games/copica-numberblocks/index.html" },
-  { id: "lombriz-numberblocks", label: "Lombriz Numberblocks", href: "/hola-platform/games/lombriz-numberblocks/index.html" },
-  { id: "carrera-sumas", label: "Carrera de Sumas", href: "/hola-platform/games/carrera-sumas/index.html" },
-  { id: "clasifica-numberblocks", label: "Clasifica Numberblocks", href: "/hola-platform/games/clasifica-numberblocks/index.html" },
-  { id: "jump-neon", label: "Jump Neón", href: "/hola-platform/games/jump-neon/index.html" },
-  { id: "pianito-online", label: "Pianito Online", href: "/hola-platform/games/pianito-online/index.html" },
-  { id: "ocr-chapa-uy", label: "OCR de Chapa UY", href: "/hola-platform/games/ocr-chapa-uy/index.html" },
+  { id: "home", label: "Inicio", href: resolveHref("../index.html") },
+  { id: "mini-territorio", label: "Mini territorio de amigos", href: resolveHref("../games/mini-territorio/index.html") },
+  { id: "mundo-numberblocks", label: "Mundo Numberblocks", href: resolveHref("../games/mundo-numberblocks/index.html") },
+  { id: "numberblocks-subida", label: "Numberblocks Subida", href: resolveHref("../games/numberblocks-subida/index.html") },
+  { id: "memory-numberblocks", label: "Memory de Numberblocks", href: resolveHref("../games/memory-numberblocks/index.html") },
+  { id: "memory-numberblocks-dificil", label: "Memory nivel dificil", href: resolveHref("../games/memory-numberblocks-dificil/index.html") },
+  { id: "eco-numberblocks", label: "Eco Numberblocks", href: resolveHref("../games/eco-numberblocks/index.html") },
+  { id: "tateti", label: "Tatetí Numberblocks", href: resolveHref("../games/tateti/index.html") },
+  { id: "torre-numberblocks", label: "Torre Numberblocks", href: resolveHref("../games/torre-numberblocks/index.html") },
+  { id: "puentes-numberblocks", label: "Puentes Numberblocks", href: resolveHref("../games/puentes-numberblocks/index.html") },
+  { id: "copica-numberblocks", label: "Copica Numberblocks", href: resolveHref("../games/copica-numberblocks/index.html") },
+  { id: "lombriz-numberblocks", label: "Lombriz Numberblocks", href: resolveHref("../games/lombriz-numberblocks/index.html") },
+  { id: "carrera-sumas", label: "Carrera de Sumas", href: resolveHref("../games/carrera-sumas/index.html") },
+  { id: "clasifica-numberblocks", label: "Clasifica Numberblocks", href: resolveHref("../games/clasifica-numberblocks/index.html") },
+  { id: "jump-neon", label: "Jump Neón", href: resolveHref("../games/jump-neon/index.html") },
+  { id: "pianito-online", label: "Pianito Online", href: resolveHref("../games/pianito-online/index.html") },
+  { id: "ocr-chapa-uy", label: "OCR de Chapa UY", href: resolveHref("../games/ocr-chapa-uy/index.html") },
 ];
 
 const slots = {
