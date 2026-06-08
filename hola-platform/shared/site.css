@@ -164,6 +164,20 @@ button, input, textarea, select { font: inherit; }
   min-width: 110px;
 }
 
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: rgba(255,255,255,0.08);
+}
+
+.profile-chip .avatar {
+  width: 32px;
+  height: 32px;
+}
+
 .site-shell {
   width: min(100%, 1600px);
   margin: 0 auto;
@@ -206,7 +220,7 @@ button, input, textarea, select { font: inherit; }
 
 .profile-preview {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 50px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
@@ -216,9 +230,9 @@ button, input, textarea, select { font: inherit; }
 }
 
 .profile-preview img {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
   object-fit: cover;
 }
 
@@ -288,7 +302,7 @@ button, input, textarea, select { font: inherit; }
   margin: 10px 0 0;
   display: grid;
   gap: 8px;
-  max-height: 34vh;
+  max-height: 30vh;
   overflow: auto;
 }
 
@@ -345,6 +359,13 @@ button, input, textarea, select { font: inherit; }
   height: 18px;
 }
 
+.people-list .avatar,
+.recent-wrap .avatar,
+.message .avatar {
+  width: 28px;
+  height: 28px;
+}
+
 .people-list li.current {
   border-color: rgba(124, 168, 255, 0.24);
   background: rgba(124, 168, 255, 0.08);
@@ -369,7 +390,7 @@ button, input, textarea, select { font: inherit; }
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 12px;
-  min-height: calc(100vh - 116px);
+  min-height: 0;
   position: sticky;
   top: 92px;
 }
@@ -396,6 +417,7 @@ button, input, textarea, select { font: inherit; }
   border-radius: 14px;
   background: rgba(255,255,255,0.02);
   border: 1px solid rgba(255,255,255,0.05);
+  min-height: 0;
 }
 
 .message {
@@ -498,7 +520,7 @@ button, input, textarea, select { font: inherit; }
   .chat-panel,
   .current-panel {
     position: static;
-    min-height: 60vh;
+    min-height: 46vh;
   }
 }
 
@@ -525,5 +547,31 @@ button, input, textarea, select { font: inherit; }
     grid-area: pill;
     justify-content: flex-start;
   }
+
+  .site-sidebar {
+    gap: 12px;
+  }
+
+  .profile-panel {
+    order: 0;
+  }
+
+  .active-panel {
+    order: 1;
+  }
+
+  .current-panel {
+    order: 2;
+    min-height: 34vh;
+  }
+
+  .people-list {
+    max-height: 24vh;
+  }
+
+  .chat-messages {
+    max-height: 30vh;
+  }
+
   .site-shell { padding: 12px; }
 }

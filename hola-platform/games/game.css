@@ -44,6 +44,7 @@
 
 .game-stage {
   padding: 16px;
+  min-width: 0;
 }
 
 .game-row {
@@ -90,6 +91,7 @@
   cursor: pointer;
   min-height: 68px;
   padding: 10px;
+  touch-action: manipulation;
 }
 
 .tile:active {
@@ -136,6 +138,7 @@
 .game-actions a {
   border-radius: 12px;
   min-height: 48px;
+  touch-action: manipulation;
 }
 
 .game-actions {
@@ -186,5 +189,33 @@
 
   .touch-pad button {
     min-height: 58px;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-hero {
+    padding: 14px;
+  }
+
+  .game-stage {
+    padding: 12px;
+  }
+
+  .tile {
+    min-height: 58px;
+    padding: 8px;
+  }
+
+  .game-board {
+    gap: 6px;
+  }
+
+  .game-actions {
+    width: 100%;
+  }
+
+  .game-actions button,
+  .game-actions a {
+    flex: 1 1 100%;
   }
 }

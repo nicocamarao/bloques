@@ -609,7 +609,7 @@ export async function sendSystemMessage(conversation, recipientProfile, text, sy
     participants: [systemProfile.sessionId, recipientProfile.sessionId].filter(Boolean),
   });
 
-  await set(recentRef(recipientProfile.sessionId), {
+  await set(ref(db, `chat/recent/${recipientProfile.sessionId}/${threadId}`), {
     kind: "direct",
     peerSessionId: systemProfile.sessionId,
     peerNickname: systemProfile.nickname,

@@ -21,12 +21,12 @@
 
 .hero-copy {
   border-radius: 14px;
-  padding: 26px;
+  padding: 24px;
 }
 
 .hero-panel {
   border-radius: 14px;
-  padding: 20px;
+  padding: 18px;
   display: grid;
   align-content: space-between;
   gap: 16px;
@@ -274,12 +274,27 @@
     grid-template-columns: 1fr;
   }
 
+  .home-hero {
+    gap: 12px;
+  }
+
+  .hero-copy,
+  .hero-panel,
+  .library-head {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
   .game-card {
     grid-template-columns: 110px minmax(0, 1fr);
   }
 }
 
 @media (max-width: 680px) {
+  .home-hero {
+    gap: 10px;
+  }
+
   .library-head {
     flex-direction: column;
     align-items: flex-start;
@@ -288,6 +303,7 @@
   .game-card {
     grid-template-columns: 92px minmax(0, 1fr);
     padding: 12px;
+    min-height: 122px;
   }
 
   .game-media {
@@ -302,5 +318,18 @@
   .game-media.sequence {
     padding: 6px;
     gap: 4px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions > * {
+    width: 100%;
+  }
+
+  .game-copy strong {
+    font-size: 17px;
   }
 }

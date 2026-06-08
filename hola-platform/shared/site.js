@@ -187,21 +187,6 @@ function renderSidebar() {
       <button type="button" id="profile-edit-open">Editar perfil</button>
     </section>
 
-    <section class="current-panel">
-      <div class="chat-head">
-        <div>
-          <span class="pill">Chat fijo</span>
-          <h2 id="conversation-title">General</h2>
-        </div>
-        <span class="unread-badge" id="unread-count">0</span>
-      </div>
-      <div class="chat-messages" id="message-list"></div>
-      <form class="chat-composer" id="message-form">
-        <input id="message-input" placeholder="Escribe un mensaje..." maxlength="240" autocomplete="off">
-        <button type="submit">Enviar</button>
-      </form>
-    </section>
-
     <section class="active-panel">
       <div class="chat-head">
         <div>
@@ -224,6 +209,21 @@ function renderSidebar() {
         <strong>Ranking</strong>
         <ul id="ranking-list" class="people-list"></ul>
       </div>
+    </section>
+
+    <section class="current-panel">
+      <div class="chat-head">
+        <div>
+          <span class="pill">Chat fijo</span>
+          <h2 id="conversation-title">General</h2>
+        </div>
+        <span class="unread-badge" id="unread-count">0</span>
+      </div>
+      <div class="chat-messages" id="message-list"></div>
+      <form class="chat-composer" id="message-form">
+        <input id="message-input" placeholder="Escribe un mensaje..." maxlength="240" autocomplete="off">
+        <button type="submit">Enviar</button>
+      </form>
     </section>
   `;
 }
