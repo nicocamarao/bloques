@@ -6,8 +6,11 @@ import {
   onProfileChange,
   recordScore,
   sendMessage,
+  sendSystemMessage,
   setCurrentConversation,
   setPresenceHeartbeat,
+  ensureSystemContacts,
+  getSystemNicolasProfile,
   toggleContact,
   watchConversation,
   watchContacts,
@@ -23,6 +26,7 @@ const resolveHref = (path) => new URL(path, import.meta.url).href;
 
 const GAMES = [
   { id: "home", label: "Inicio", href: resolveHref("../index.html") },
+  { id: "mundo-fiuma", label: "Mundo Fiuma", href: resolveHref("../games/mundo-fiuma/index.html") },
   { id: "mini-territorio", label: "Mini territorio de amigos", href: resolveHref("../games/mini-territorio/index.html") },
   { id: "mundo-numberblocks", label: "Mundo Numberblocks", href: resolveHref("../games/mundo-numberblocks/index.html") },
   { id: "numberblocks-subida", label: "Numberblocks Subida", href: resolveHref("../games/numberblocks-subida/index.html") },
@@ -358,11 +362,18 @@ function renderContacts() {
         <img class="avatar" src="${avatarSource(display)}" alt="">
         <span>
           <strong>${display.nickname}</strong>
-          <span>${display.online ? "en línea" : "contacto fijado"}</span>
+          <span>${contact.system === "nicolas" ? "Sistema · saludo fijo" : display.online ? "en línea" : "contacto fijado"}</span>
         </span>
       </button>
+      ${contact.system === "nicolas"
+        ? ""
+        : `<button type="button" class="contact-toggle active" aria-label="Desfijar contacto">${friendshipIcon(true)}</button>`
+      }
     `;
     li.querySelector("button").addEventListener("click", () => openConversation({ kind: "direct", peer: display }));
+    li.querySelector(".contact-toggle")?.addEventListener("click", async () => {
+      await toggleContact(state.me, display);
+    });
     contactsList.appendChild(li);
   });
 }
@@ -530,6 +541,8 @@ function openConversation(conversation) {
   });
 }
 
+window.openPlatformConversation = openConversation;
+
 function bindModal() {
   const {
     profileButton,
@@ -624,6 +637,11 @@ async function bootstrap() {
 
   state.me = await bootstrapProfile();
   syncProfileUI();
+  if (pageId() === "home") {
+    await ensureSystemContacts(state.me);
+    const nicolas = getSystemNicolasProfile();
+    await sendSystemMessage({ kind: "direct", peer: state.me }, state.me, "Hola, bienvenido otra vez", nicolas);
+  }
   setConversation({ kind: "general" });
 
   peopleUnsub = listActivePeople((people) => {

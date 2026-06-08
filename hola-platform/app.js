@@ -16,6 +16,17 @@ const games = [
     preview: { kind: "emoji", value: "🧱" },
   },
   {
+    id: "mundo-fiuma",
+    title: "Mundo Fiuma",
+    href: "./games/mundo-fiuma/index.html",
+    description: "El mundo principal en tiempo real, con chat, movimiento y presencia viva.",
+    kind: "symbol",
+    symbol: "🌍",
+    accent: "mundo",
+    category: "Mundo",
+    preview: { kind: "emoji", value: "🌍" },
+  },
+  {
     id: "mundo-numberblocks",
     title: "Mundo Numberblocks",
     href: "./games/mundo-numberblocks/index.html",
@@ -221,7 +232,7 @@ function renderMedia(game) {
 function renderHome() {
   if (!main) return;
 
-  const categories = ["Aventura", "Memoria", "Tableros", "Ritmo", "Arcade", "Utilidades"];
+  const categories = ["Mundo", "Aventura", "Memoria", "Tableros", "Ritmo", "Arcade", "Utilidades"];
 
   main.innerHTML = `
     <section class="home-hero">
@@ -238,6 +249,7 @@ function renderHome() {
         <p>Elige un juego o sigue conversando mientras se mantiene tu presencia en Firebase.</p>
         <div class="hero-actions">
           <a class="game-action" href="./games/mini-territorio/index.html">Mini territorio</a>
+          <a class="game-action" href="./games/mundo-fiuma/index.html">Mundo Fiuma</a>
           <a class="game-action" href="./games/mundo-numberblocks/index.html">Mundo Numberblocks</a>
         </div>
       </div>

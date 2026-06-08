@@ -1,0 +1,220 @@
+.fiuma-page {
+  gap: 18px;
+}
+
+.fiuma-stack {
+  gap: 16px;
+}
+
+.fiuma-board-wrap {
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(10, 16, 32, 0.88);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.fiuma-board {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(124, 168, 255, 0.06), rgba(99, 230, 190, 0.04)),
+    rgba(5, 8, 22, 0.92);
+}
+
+.fiuma-cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+}
+
+.fiuma-cell {
+  border-right: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.025), transparent),
+    rgba(255,255,255,0.01);
+}
+
+.fiuma-players {
+  position: absolute;
+  inset: 0;
+}
+
+.fiuma-player {
+  position: absolute;
+  width: clamp(74px, 8vw, 98px);
+  transform: translate(-50%, -50%);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+  color: #f5f7ff;
+  cursor: pointer;
+}
+
+.fiuma-player .label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.05;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fiuma-player .bubble {
+  display: inline-block;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(7, 12, 24, 0.86);
+  border: 1px solid rgba(124, 168, 255, 0.2);
+  color: #f5f7ff;
+  font-size: 11px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.22);
+}
+
+.fiuma-player .orb {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.16);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.22);
+}
+
+.fiuma-player .orb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fiuma-player .orb span {
+  font-size: 18px;
+}
+
+.fiuma-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  gap: 8px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.fiuma-controls button {
+  min-height: 54px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 168, 255, 0.22);
+  background: rgba(255,255,255,0.04);
+  color: #f5f7ff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fiuma-controls button[data-move="up"] { grid-area: up; }
+.fiuma-controls button[data-move="left"] { grid-area: left; }
+.fiuma-controls button[data-move="right"] { grid-area: right; }
+.fiuma-controls button[data-move="down"] { grid-area: down; }
+
+.fiuma-chat {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(10, 16, 32, 0.88);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  display: grid;
+  gap: 12px;
+}
+
+.fiuma-feed {
+  min-height: 180px;
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.02);
+}
+
+.fiuma-message {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.fiuma-message strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.fiuma-message p {
+  margin: 0;
+  color: #d9e4ff;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.fiuma-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.fiuma-composer input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(174, 190, 255, 0.16);
+  background: rgba(255,255,255,0.03);
+  color: #f5f7ff;
+  padding: 12px 14px;
+}
+
+.fiuma-composer button {
+  border-radius: 12px;
+  border: 1px solid rgba(124, 168, 255, 0.24);
+  background: linear-gradient(180deg, rgba(124, 168, 255, 0.22), rgba(124, 168, 255, 0.10));
+  color: #f5f7ff;
+  font-weight: 800;
+  padding: 0 16px;
+}
+
+@media (max-width: 900px) {
+  .fiuma-controls {
+    max-width: none;
+  }
+
+  .fiuma-player {
+    width: 72px;
+  }
+
+  .fiuma-player .orb {
+    width: 44px;
+    height: 44px;
+  }
+
+  .fiuma-feed {
+    max-height: 220px;
+  }
+}

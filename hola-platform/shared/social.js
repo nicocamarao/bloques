@@ -98,6 +98,13 @@ function contactsRootRef() {
   return ref(db, "chat/contacts");
 }
 
+const SYSTEM_NICOLAS = {
+  sessionId: "system-nicolas",
+  nickname: "Nicolás",
+  normalized: "system-nicolas",
+  photoDataUrl: "",
+};
+
 function getConversationId(conversation, me) {
   if (!me?.sessionId) return null;
   if (!conversation || conversation.kind === "general") return "general";
@@ -165,7 +172,9 @@ async function releaseNickname(normalized, sessionId) {
 }
 
 async function persistProfile(profile) {
+  const existing = await get(profileRef(profile.sessionId));
   await set(profileRef(profile.sessionId), {
+    ...(existing.val() || {}),
     sessionId: profile.sessionId,
     nickname: profile.nickname,
     normalized: profile.normalized,
@@ -310,10 +319,12 @@ export function watchContacts(normalized, callback) {
         contactNormalized,
         contactNickname: displayNickname(row.contactNickname || contactNormalized),
         contactPhotoDataUrl: row.contactPhotoDataUrl || "",
+        fixed: Boolean(row.fixed),
+        system: row.system || "",
         createdAt: Number(row.createdAt || 0),
         updatedAt: Number(row.updatedAt || 0),
       }))
-      .sort((a, b) => b.updatedAt - a.updatedAt || b.createdAt - a.createdAt);
+      .sort((a, b) => Number(b.fixed) - Number(a.fixed) || b.updatedAt - a.updatedAt || b.createdAt - a.createdAt);
     callback(rows);
   });
 }
@@ -325,6 +336,7 @@ export async function toggleContact(ownerProfile, targetProfile) {
 
   const itemRef = ref(db, `chat/contacts/${owner.normalized}/${targetProfile.normalized}`);
   const snapshot = await get(itemRef);
+  if (snapshot.exists() && snapshot.val()?.fixed) return;
   if (snapshot.exists()) {
     await set(itemRef, null);
     return;
@@ -335,15 +347,41 @@ export async function toggleContact(ownerProfile, targetProfile) {
     contactNormalized: targetProfile.normalized,
     contactNickname: targetProfile.nickname || targetProfile.normalized,
     contactPhotoDataUrl: targetProfile.photoDataUrl || "",
+    fixed: false,
     createdAt: nowTs,
     updatedAt: nowTs,
   });
+}
+
+export async function ensureSystemContacts(profile) {
+  const owner = profile || profileState || (await bootstrapProfile());
+  if (!owner?.normalized) return SYSTEM_NICOLAS;
+
+  const nowTs = now();
+  await set(ref(db, `chat/contacts/${owner.normalized}/${SYSTEM_NICOLAS.normalized}`), {
+    contactNormalized: SYSTEM_NICOLAS.normalized,
+    contactNickname: SYSTEM_NICOLAS.nickname,
+    contactPhotoDataUrl: SYSTEM_NICOLAS.photoDataUrl,
+    fixed: true,
+    system: "nicolas",
+    createdAt: nowTs,
+    updatedAt: nowTs,
+  });
+
+  return SYSTEM_NICOLAS;
+}
+
+export function getSystemNicolasProfile() {
+  return { ...SYSTEM_NICOLAS };
 }
 
 export async function setPresenceHeartbeat(profile = profileState, options = {}) {
   const current = profile || (await bootstrapProfile());
   const online = options.online !== false;
   if (!current) return;
+  const extra = { ...options };
+  delete extra.online;
+  delete extra.path;
 
   await update(profileRef(current.sessionId), {
     nickname: current.nickname,
@@ -354,6 +392,7 @@ export async function setPresenceHeartbeat(profile = profileState, options = {})
     onlineUntil: online ? now() + ACTIVE_WINDOW_MS : now() - 1000,
     currentPath: options.path || location.pathname,
     currentConversation: currentConversation?.kind || "general",
+    ...extra,
   });
 }
 
@@ -376,6 +415,9 @@ function buildPeopleFromSnapshot(snapshotValue, meSessionId) {
       lastSeenAt: Number(person.lastSeenAt || 0),
       onlineUntil: Number(person.onlineUntil || 0),
       currentPath: person.currentPath || "",
+      worldX: Number(person.worldX ?? -1),
+      worldY: Number(person.worldY ?? -1),
+      worldUpdatedAt: Number(person.worldUpdatedAt || 0),
       online: Number(person.onlineUntil || 0) > now(),
     }))
     .filter((person) => person.sessionId);
@@ -541,6 +583,41 @@ export async function sendMessage(conversation, me, text) {
 
   await syncRecent(profile, conversation, message, threadId);
   await notifyRecipients(conversation, profile, threadId, message);
+}
+
+export async function sendSystemMessage(conversation, recipientProfile, text, systemProfile = SYSTEM_NICOLAS) {
+  if (!recipientProfile?.sessionId || !text) return;
+  const threadId = getConversationId({ kind: "direct", peer: recipientProfile }, systemProfile);
+  if (!threadId) return;
+
+  const message = {
+    senderSessionId: systemProfile.sessionId,
+    senderNickname: systemProfile.nickname,
+    senderPhotoDataUrl: systemProfile.photoDataUrl || "",
+    text: String(text || "").trim().slice(0, 240),
+    createdAt: now(),
+    kind: "direct",
+  };
+  if (!message.text) return;
+
+  await push(messagesRef(threadId), message);
+  await update(threadMetaRef(threadId), {
+    kind: "direct",
+    updatedAt: message.createdAt,
+    lastMessage: message.text,
+    lastSenderSessionId: systemProfile.sessionId,
+    participants: [systemProfile.sessionId, recipientProfile.sessionId].filter(Boolean),
+  });
+
+  await set(recentRef(recipientProfile.sessionId), {
+    kind: "direct",
+    peerSessionId: systemProfile.sessionId,
+    peerNickname: systemProfile.nickname,
+    peerPhotoDataUrl: systemProfile.photoDataUrl || "",
+    lastMessage: message.text,
+    lastMessageAt: message.createdAt,
+    lastSenderSessionId: systemProfile.sessionId,
+  });
 }
 
 export async function recordScore(gameId, score, meta = {}) {

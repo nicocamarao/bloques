@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mundo Fiuma</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page fiuma-page">
+          <header class="game-hero">
+            <div>
+              <p class="eyebrow">Mundo principal</p>
+              <h1>Mundo Fiuma</h1>
+              <p>Moverse en tiempo real, abrir chats con un click y hablar en el mundo general que deja mensajes sobre cada jugador.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="fiuma-count">0 conectados</span>
+              <span class="pill" id="fiuma-me-pos">x:0 y:0</span>
+              <span class="pill" id="fiuma-status">Mundo en vivo</span>
+            </div>
+          </header>
+
+          <section class="game-stage stack fiuma-stack">
+            <div class="fiuma-board-wrap">
+              <div id="fiuma-board" class="fiuma-board" aria-label="Tablero de Mundo Fiuma"></div>
+            </div>
+
+            <div class="fiuma-controls" aria-label="Movimiento">
+              <button type="button" data-move="up">Arriba</button>
+              <button type="button" data-move="left">Izquierda</button>
+              <button type="button" data-move="right">Derecha</button>
+              <button type="button" data-move="down">Abajo</button>
+            </div>
+
+            <section class="fiuma-chat">
+              <div class="chat-head">
+                <div>
+                  <span class="pill">Chat general</span>
+                  <strong>Mensaje del mundo</strong>
+                </div>
+                <span class="pill" id="fiuma-participants">0 presentes</span>
+              </div>
+              <div id="fiuma-feed" class="fiuma-feed" aria-live="polite"></div>
+              <form id="fiuma-form" class="fiuma-composer">
+                <input id="fiuma-input" maxlength="240" autocomplete="off" placeholder="Escribe en el mundo...">
+                <button type="submit">Enviar</button>
+              </form>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
