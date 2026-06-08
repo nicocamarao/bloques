@@ -112,6 +112,17 @@ button, input, textarea, select { font: inherit; }
   color: var(--muted);
 }
 
+.profile-chip small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-chip small i {
+  font-size: 11px;
+  line-height: 1;
+}
+
 .site-brand {
   display: flex;
   align-items: center;

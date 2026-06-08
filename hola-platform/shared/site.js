@@ -144,8 +144,19 @@ function currentGameLabel() {
   return GAMES.find((game) => game.id === id)?.label || "Home";
 }
 
+function ensureFontAwesome() {
+  if (document.getElementById("font-awesome-css")) return;
+  const link = document.createElement("link");
+  link.id = "font-awesome-css";
+  link.rel = "stylesheet";
+  link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css";
+  link.crossOrigin = "anonymous";
+  document.head.appendChild(link);
+}
+
 function renderTop() {
   if (!slots.top) return;
+  ensureFontAwesome();
   const activeId = pageId();
   slots.top.innerHTML = `
     <header class="site-top">
@@ -153,7 +164,7 @@ function renderTop() {
         <img id="profile-chip-avatar" class="avatar" alt="">
         <span>
           <strong id="profile-chip-name">Jugador</strong>
-          <small>Editar perfil</small>
+          <small><i class="fa-solid fa-pen"></i><span>Editar perfil</span></small>
         </span>
       </button>
       <div class="site-brand">
@@ -182,17 +193,6 @@ function renderTop() {
 function renderSidebar() {
   if (!slots.sidebar) return;
   slots.sidebar.innerHTML = `
-    <section class="profile-panel">
-      <div class="profile-preview">
-        <img id="profile-photo" class="avatar" alt="">
-        <div>
-          <strong id="profile-nickname">Preparando...</strong>
-          <span class="muted">Tu nick y foto se guardan en esta sesión y en Firebase.</span>
-        </div>
-      </div>
-      <button type="button" id="profile-edit-open">Editar perfil</button>
-    </section>
-
     <section class="active-panel">
       <div class="chat-head">
         <div>
