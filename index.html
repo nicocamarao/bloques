@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bloques Arcade</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body data-page="home">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="brand-mark">B</span>
+        <div>
+          <strong>Bloques Arcade</strong>
+          <p>Juegos, comunidad y progreso en Firebase</p>
+        </div>
+      </div>
+      <div class="topbar-session">
+        <span>Tu nick</span>
+        <strong id="home-nick">Preparando...</strong>
+      </div>
+      <nav class="topnav" aria-label="Juegos">
+        <a href="./games/bloques/index.html">Bloques</a>
+        <a href="./games/numberblocks-subida/index.html">Subida</a>
+        <a href="./games/sum-quest/index.html">Sum Quest</a>
+        <a href="./games/memory-clasico/index.html">Memory Clasico</a>
+        <a href="./games/memory-relampago/index.html">Memory Relampago</a>
+        <a href="./games/tateti-numberblocks/index.html">Tateti</a>
+        <a href="./games/copica-numberblocks/index.html">Copica</a>
+        <a href="./games/lombriz-numberblocks/index.html">Lombriz</a>
+        <a href="./games/jump-neon/index.html">Jump Neon</a>
+        <a href="./games/jump-atelier/index.html">Jump Atelier</a>
+        <a href="./games/pianito/index.html">Pianito</a>
+        <a href="./games/chat-infinito/index.html">Chat</a>
+        <a href="./games/chapas/index.html">Chapas</a>
+      </nav>
+    </header>
+
+    <main class="home-shell">
+      <aside class="community-panel">
+        <section class="panel-card">
+          <p class="eyebrow">Comunidad</p>
+          <h1>Tu sala</h1>
+          <p id="home-status" class="panel-copy">Cargando tu sesion...</p>
+          <div class="panel-note">
+            <strong>Chat directo</strong>
+            <span>Buscá un nickname y abrí una conversacion privada.</span>
+          </div>
+          <div class="panel-meta">
+            <strong id="home-friend-count">0</strong>
+            <span>Amigos confirmados</span>
+          </div>
+          <ul id="home-friend-list" class="mini-list"></ul>
+        </section>
+
+        <section class="panel-card">
+          <p class="eyebrow">En linea</p>
+          <div class="panel-meta">
+            <strong id="online-count">0 personas</strong>
+            <span>Nicknames activos ahora mismo</span>
+          </div>
+          <ul id="home-roster" class="mini-list"></ul>
+        </section>
+
+        <section class="panel-card">
+          <p class="eyebrow">Actividad</p>
+          <ul class="activity-list">
+            <li>Se subio Bloques a la plataforma.</li>
+            <li>Se confirmo el flujo de Firebase Auth.</li>
+            <li>Quedaron los juegos en paginas separadas.</li>
+            <li>Se agregaron Memory, Tateti, Copica y Lombriz Numberblocks.</li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="home-content">
+        <div class="hero-copy">
+          <p class="eyebrow">Portada</p>
+          <h2>Elegi un juego y abrilo en su propia pagina.</h2>
+          <p>La portada queda liviana: sin frames, solo accesos directos, menu superior y el panel comunitario a la izquierda.</p>
+          <div class="hero-pills">
+            <span>Sesion persistente</span>
+            <span>Firebase Realtime</span>
+            <span>Juegos separados</span>
+          </div>
+        </div>
+
+        <section class="game-grid" aria-label="Juegos">
+          <a class="game-card accent-blue" href="./games/bloques/index.html">
+            <span class="card-kicker">Base</span>
+            <strong>Bloques</strong>
+            <p>La cuadricula compartida que ya venias usando como base del proyecto.</p>
+          </a>
+          <a class="game-card accent-green" href="./games/numberblocks-subida/index.html">
+            <span class="card-kicker">Aventura</span>
+            <strong>Numberblocks Subida</strong>
+            <p>Subida vertical 2D con los bloques y la progresion de 1 a 100.</p>
+          </a>
+          <a class="game-card accent-gold" href="./games/sum-quest/index.html">
+            <span class="card-kicker">Puzzle</span>
+            <strong>Numberblocks Sum Quest</strong>
+            <p>Suma exacta para abrir muros y avanzar escenario por escenario.</p>
+          </a>
+          <a class="game-card accent-slate" href="./games/memory-clasico/index.html">
+            <span class="card-kicker">Memoria</span>
+            <strong>Memory Clasico</strong>
+            <p>Doce parejas de tiles Numberblocks para jugar con calma.</p>
+          </a>
+          <a class="game-card accent-slate" href="./games/memory-relampago/index.html">
+            <span class="card-kicker">Memoria</span>
+            <strong>Memory Relampago</strong>
+            <p>La misma idea, pero con reloj y una tension mas apretada.</p>
+          </a>
+          <a class="game-card accent-blue" href="./games/tateti-numberblocks/index.html">
+            <span class="card-kicker">Mesa</span>
+            <strong>Tateti Numberblocks</strong>
+            <p>Dos jugadores y fichas de Numberblocks para el duelo rapido.</p>
+          </a>
+          <a class="game-card accent-green" href="./games/copica-numberblocks/index.html">
+            <span class="card-kicker">Ritmo</span>
+            <strong>Copica Numberblocks</strong>
+            <p>Secuencias que crecen y te obligan a memorizar con precisión.</p>
+          </a>
+          <a class="game-card accent-red" href="./games/lombriz-numberblocks/index.html">
+            <span class="card-kicker">Snake</span>
+            <strong>Lombriz Numberblocks</strong>
+            <p>La lombriz aumenta con cada bloque y apunta a llegar al 12.</p>
+          </a>
+          <a class="game-card accent-red" href="./games/jump-neon/index.html">
+            <span class="card-kicker">Arcade</span>
+            <strong>Jump Neon</strong>
+            <p>Una version mas rapida del motor de Jump, con otra paleta.</p>
+          </a>
+          <a class="game-card accent-teal" href="./games/jump-atelier/index.html">
+            <span class="card-kicker">Arcade</span>
+            <strong>Jump Atelier</strong>
+            <p>La misma base, con ritmo mas calmo y estilo de taller.</p>
+          </a>
+          <a class="game-card accent-teal" href="./games/pianito/index.html">
+            <span class="card-kicker">Instrumento</span>
+            <strong>Pianito Online</strong>
+            <p>Teclado simple para tocar desde mouse, dedo o teclado físico.</p>
+          </a>
+          <a class="game-card accent-slate" href="./games/chat-infinito/index.html">
+            <span class="card-kicker">Mesa</span>
+            <strong>Chat Infinito</strong>
+            <p>Sala persistente con mensajes guardados en Firebase Realtime Database.</p>
+          </a>
+          <a class="game-card accent-red" href="./games/chapas/index.html">
+            <span class="card-kicker">OCR</span>
+            <strong>OCR de Chapa UY</strong>
+            <p>El lector de matrículas sigue vivo como página propia dentro de la plataforma.</p>
+          </a>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="./home.js"></script>
+  </body>
+</html>

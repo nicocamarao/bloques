@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jump Atelier</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script>
+      window.JUMP_CONFIG = {
+        title: "Jump Atelier",
+        startValue: 1,
+        speed: 4.7,
+        jumpForce: 11.8,
+        scoreStep: 10,
+        palette: {
+          1: { bg: "#f59e0b", fg: "#111827", border: "#b45309" },
+          10: { bg: "#84cc16", fg: "#111827", border: "#4d7c0f" },
+          20: { bg: "#38bdf8", fg: "#0f172a", border: "#0284c7" },
+          30: { bg: "#f472b6", fg: "#111827", border: "#be185d" },
+          40: { bg: "#818cf8", fg: "#ffffff", border: "#4f46e5" },
+          50: { bg: "#fb7185", fg: "#ffffff", border: "#be123c" }
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <a href="../../index.html">Bloques Arcade</a>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../pianito/index.html">Pianito</a>
+          <a href="../chat-infinito/index.html">Chat</a>
+        </nav>
+      </header>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Motor Jump</p>
+          <h1>Jump Atelier</h1>
+          <p>Una version mas calma del mismo motor, con paleta de taller y ritmo suave.</p>
+        </div>
+        <div class="hud">
+          <strong id="jump-score">Puntos: 0</strong>
+          <span id="jump-unlocked">Desbloqueado: 1</span>
+          <button id="start">Iniciar</button>
+        </div>
+      </section>
+      <canvas id="game"></canvas>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

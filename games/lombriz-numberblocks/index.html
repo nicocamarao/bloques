@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lombriz Numberblocks</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <a href="../../index.html"><strong>Bloques Arcade</strong></a>
+          <p>Lombriz que crece con Numberblocks</p>
+        </div>
+        <nav>
+          <a href="../bloques/index.html">Bloques</a>
+          <a href="../memory-clasico/index.html">Memory</a>
+          <a href="../tateti-numberblocks/index.html">Tateti</a>
+          <a href="../copica-numberblocks/index.html">Copica</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Snake</p>
+          <h1>Lombriz Numberblocks</h1>
+          <p>Arranca en One, come el siguiente block y crece hasta completar la secuencia. Si te chocas, se reinicia la ronda.</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span>Longitud</span><strong id="length">1</strong></div>
+          <div class="stat"><span>Mejor</span><strong id="best">1</strong></div>
+          <div class="stat"><span>Estado</span><strong id="status">Listo</strong></div>
+        </div>
+      </section>
+
+      <section class="game">
+        <div class="board-wrap">
+          <div class="board" id="board" aria-label="Tablero de la lombriz"></div>
+        </div>
+        <aside class="panel">
+          <div class="panel-card">
+            <strong>Objetivo</strong>
+            <p>Llegar a Twelve sin chocar con paredes ni con tu propio cuerpo.</p>
+          </div>
+          <div class="panel-card">
+            <strong>Guardado</strong>
+            <p id="save">Esperando cuenta</p>
+          </div>
+          <div class="controls">
+            <button id="restart" type="button">Reiniciar</button>
+            <button id="pause" type="button">Pausar</button>
+          </div>
+          <div class="pad">
+            <button data-dir="up" type="button">Arriba</button>
+            <div class="row">
+              <button data-dir="left" type="button">Izq</button>
+              <button data-dir="down" type="button">Abajo</button>
+              <button data-dir="right" type="button">Der</button>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

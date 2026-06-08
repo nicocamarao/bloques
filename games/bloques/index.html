@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bloques Arcade</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">B</span>
+          <div>
+            <h1>Bloques</h1>
+            <p id="connection-status">Conectando...</p>
+            <p><a href="../../index.html">Volver al hub</a></p>
+          </div>
+        </div>
+
+        <section class="auth-card" id="auth-card">
+          <div id="signed-out">
+            <div class="auth-tabs" role="tablist">
+              <button class="active" type="button" data-auth-mode="login">Entrar</button>
+              <button type="button" data-auth-mode="register">Crear usuario</button>
+            </div>
+            <form id="auth-form">
+              <label>
+                Email
+                <input id="email" type="email" autocomplete="email" required>
+              </label>
+              <label>
+                Password
+                <input id="password" type="password" autocomplete="current-password" required minlength="12">
+              </label>
+              <div class="strength" aria-label="Fortaleza de password">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <p class="hint" id="password-hint">Minimo 12 caracteres, mayuscula, minuscula, numero y simbolo.</p>
+              <button class="primary" id="auth-submit" type="submit">Entrar</button>
+            </form>
+          </div>
+          <div id="signed-in" hidden>
+            <strong id="user-email"></strong>
+            <p id="verify-status"></p>
+            <div class="auth-actions">
+              <button type="button" id="send-verification">Confirmar email</button>
+              <button type="button" id="sign-out">Salir</button>
+            </div>
+          </div>
+          <p class="status" id="auth-status"></p>
+        </section>
+
+        <nav class="game-nav" id="game-nav" aria-label="Juegos"></nav>
+      </aside>
+
+      <section class="stage">
+        <header class="stage-head">
+          <div>
+            <p class="eyebrow">GitHub Pages + Firebase</p>
+            <h2 id="game-title">Bloques</h2>
+          </div>
+          <div class="save-state" id="save-state">Listo</div>
+        </header>
+
+        <section class="game-view active" id="view-blocks">
+          <div class="blocks-toolbar">
+            <strong>Tablero compartido</strong>
+            <span>Los reclamos quedan asociados al usuario logueado.</span>
+          </div>
+          <section id="error-panel" class="error-panel" hidden></section>
+          <section id="grid" class="grid" aria-label="Cuadricula de bloques"></section>
+          <footer class="legend" aria-label="Niveles de bloque">
+            <span><i class="swatch white"></i>0</span>
+            <span><i class="swatch gray"></i>5</span>
+            <span><i class="swatch orange"></i>15</span>
+            <span><i class="swatch yellow"></i>35</span>
+            <span><i class="swatch green"></i>65</span>
+            <span><i class="swatch blue"></i>105</span>
+            <span><i class="swatch red"></i>155</span>
+            <span><i class="swatch black"></i>255</span>
+          </footer>
+        </section>
+
+        <section class="game-view" id="view-subida">
+          <div class="panel-card" style="max-width: 520px;">
+            <p class="eyebrow">Pagina propia</p>
+            <h2>Numberblocks Subida</h2>
+            <p>Este juego vive en su propia pagina separada, sin marcos incrustados.</p>
+            <p><a href="../numberblocks-subida/index.html">Abrir Numberblocks Subida</a></p>
+          </div>
+        </section>
+
+        <section class="game-view" id="view-sumquest">
+          <div class="panel-card" style="max-width: 520px;">
+            <p class="eyebrow">Pagina propia</p>
+            <h2>Numberblocks Sum Quest</h2>
+            <p>El puzzle de suma exacta se abre como pagina independiente.</p>
+            <p><a href="../sum-quest/index.html">Abrir Numberblocks Sum Quest</a></p>
+          </div>
+        </section>
+
+        <section class="game-view" id="view-jump">
+          <div class="canvas-shell">
+            <div class="hud-line">
+              <strong id="jump-score">Puntos: 0</strong>
+              <span id="jump-unlocked">Desbloqueado: 1</span>
+              <button type="button" id="jump-start">Iniciar</button>
+            </div>
+            <canvas id="jump-canvas" width="960" height="420"></canvas>
+          </div>
+        </section>
+
+        <section class="game-view" id="view-conga">
+          <div class="conga-layout">
+            <form class="inline-form" id="conga-add-form">
+              <input id="conga-name" placeholder="Jugador">
+              <button type="submit">Agregar</button>
+              <button type="button" id="conga-start">Arrancar</button>
+              <button type="button" id="conga-reset">Reset</button>
+            </form>
+            <p class="status" id="conga-status">Agrega jugadores para empezar.</p>
+            <div class="conga-grid" id="conga-grid"></div>
+            <button class="primary" type="button" id="conga-round">Procesar ronda</button>
+            <div class="history" id="conga-history"></div>
+          </div>
+        </section>
+
+        <section class="game-view" id="view-hollow">
+          <div class="canvas-shell">
+            <div class="hud-line">
+              <strong id="hk-status">Hallownest: listo</strong>
+              <span id="hk-stats">Mascaras 5 | Alma 0</span>
+              <button type="button" id="hk-start">Iniciar</button>
+            </div>
+            <canvas id="hk-canvas" width="960" height="460"></canvas>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
