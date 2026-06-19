@@ -342,6 +342,12 @@ body { padding: 18px; }
   border-color: rgba(124, 168, 255, 0.30);
 }
 
+.game-card:focus-visible,
+.topnav a:focus-visible {
+  outline: 2px solid rgba(124, 168, 255, 0.65);
+  outline-offset: 2px;
+}
+
 .card-kicker {
   align-self: start;
   background: rgba(255, 255, 255, 0.05);

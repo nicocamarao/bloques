@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Camara Effects</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07111f;
+        --panel: rgba(11, 18, 32, 0.86);
+        --panel-strong: rgba(8, 14, 26, 0.96);
+        --line: rgba(173, 197, 255, 0.14);
+        --text: #f4f7ff;
+        --muted: #aab5d3;
+        --accent: #66e3c0;
+        --accent-2: #7fa8ff;
+        --warn: #ffb86b;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(127, 168, 255, 0.18), transparent 26%),
+          radial-gradient(circle at top right, rgba(102, 227, 192, 0.12), transparent 22%),
+          linear-gradient(180deg, #06111f 0%, #050914 100%);
+      }
+      a { color: inherit; text-decoration: none; }
+      .shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .top nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .top a {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 16px;
+        align-items: stretch;
+        margin-bottom: 16px;
+      }
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+      .copy {
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .copy::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -30% auto;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(102, 227, 192, 0.16), transparent 66%);
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 900;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 6vw, 4.8rem);
+        line-height: 0.95;
+        max-width: 8ch;
+      }
+      .copy p {
+        max-width: 60ch;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .status {
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+      }
+      .status strong {
+        font-size: 1rem;
+      }
+      .status small {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .viewer {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+        gap: 16px;
+      }
+      .stage {
+        overflow: hidden;
+      }
+      .screen {
+        position: relative;
+        min-height: 560px;
+        background: #02060d;
+      }
+      video, canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .controls {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      button, select, input[type="range"] {
+        font: inherit;
+      }
+      button {
+        appearance: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 11px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 800;
+      }
+      button.primary {
+        background: linear-gradient(135deg, rgba(127, 168, 255, 0.95), rgba(102, 227, 192, 0.92));
+        color: #08111d;
+        border: 0;
+      }
+      button.active {
+        border-color: rgba(102, 227, 192, 0.55);
+        background: rgba(102, 227, 192, 0.10);
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      select, input[type="range"] {
+        width: 100%;
+      }
+      select {
+        padding: 11px 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+      input[type="range"] {
+        accent-color: var(--accent);
+      }
+      .preview {
+        display: grid;
+        gap: 8px;
+      }
+      .preview-box {
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+      .hint {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .swatch {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 2px solid rgba(255,255,255,0.65);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+      }
+      @media (max-width: 980px) {
+        .hero, .viewer { grid-template-columns: 1fr; }
+        .screen { min-height: 360px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <a href="../../index.html">Bloques Arcade</a>
+        <nav>
+          <a href="../chapas/index.html">Chapas</a>
+          <a href="../pianito/index.html">Pianito</a>
+          <a href="../chat-infinito/index.html">Chat</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div class="panel copy">
+          <p class="eyebrow">Camara</p>
+          <h1>Camara Effects</h1>
+          <p>
+            Encendé la cámara y probá filtros básicos en tiempo real. La idea es simple:
+            mirar, tocar, cambiar y capturar una versión divertida de tu video.
+          </p>
+          <div class="pills">
+            <span class="pill">Filtro en vivo</span>
+            <span class="pill">Snapshot</span>
+            <span class="pill">Canvas overlay</span>
+          </div>
+        </div>
+        <aside class="panel status">
+          <strong id="status">Listo para iniciar.</strong>
+          <small id="statusDetail">Necesitás dar permiso de cámara para ver el feed en vivo.</small>
+          <div class="swatches" id="swatches"></div>
+        </aside>
+      </section>
+
+      <section class="viewer">
+        <section class="panel stage">
+          <div class="screen">
+            <video id="video" playsinline autoplay muted></video>
+            <canvas id="overlay"></canvas>
+          </div>
+        </section>
+
+        <aside class="panel controls">
+          <div class="row">
+            <button class="primary" id="startBtn">Activar cámara</button>
+            <button id="stopBtn">Detener</button>
+            <button id="captureBtn">Capturar</button>
+          </div>
+
+          <label>
+            Efecto
+            <select id="effect">
+              <option value="none">Normal</option>
+              <option value="grayscale">Blanco y negro</option>
+              <option value="sepia">Sepia</option>
+              <option value="contrast">Contraste fuerte</option>
+              <option value="blur">Blur suave</option>
+              <option value="invert">Invertido</option>
+              <option value="hue">Color girado</option>
+            </select>
+          </label>
+
+          <label>
+            Intensidad
+            <input id="intensity" type="range" min="0" max="100" value="70">
+          </label>
+
+          <label>
+            Glow
+            <input id="glow" type="range" min="0" max="30" value="10">
+          </label>
+
+          <div class="preview">
+            <div class="eyebrow">Captura</div>
+            <div class="preview-box">
+              <img id="snapshot" alt="Captura del efecto">
+            </div>
+          </div>
+
+          <div class="list">
+            <div class="hint" id="effectInfo">Normal: mantiene el feed limpio y natural.</div>
+            <div class="hint">Tip: mové la cara o la mano frente a la cámara para ver cómo cambia el efecto.</div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
