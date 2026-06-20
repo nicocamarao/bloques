@@ -44,6 +44,7 @@ const GAMES = [
   { id: "jump-neon", label: "Jump Neón", href: resolveHref("../games/jump-neon/index.html") },
   { id: "pianito-online", label: "Pianito Online", href: resolveHref("../games/pianito-online/index.html") },
   { id: "ocr-chapa-uy", label: "OCR de Chapa UY", href: resolveHref("../games/ocr-chapa-uy/index.html") },
+  { id: "camara-effects", label: "Camara Effects", href: resolveHref("../games/camara-effects/index.html") },
   { id: "pasa-la-lista", label: "Pasa La Lista", href: resolveHref("../games/pasa-la-lista/index.html") },
 ];
 

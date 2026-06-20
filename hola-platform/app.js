@@ -49,6 +49,17 @@ const games = [
     preview: { kind: "emoji", value: "📷" },
   },
   {
+    id: "camara-effects",
+    title: "Camara Effects",
+    href: "./games/camara-effects/index.html",
+    description: "Cámara en vivo con filtros básicos y guardado automático para tu sesión anónima.",
+    kind: "symbol",
+    symbol: "📸",
+    accent: "utilidad",
+    category: "Utilidades",
+    preview: { kind: "emoji", value: "📸" },
+  },
+  {
     id: "mundo-numberblocks",
     title: "Mundo Numberblocks",
     href: "./games/mundo-numberblocks/index.html",

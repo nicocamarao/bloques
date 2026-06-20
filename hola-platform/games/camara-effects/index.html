@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Camara Effects</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <style>
+      .camera-stage {
+        display: grid;
+        gap: 16px;
+      }
+      .camera-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+      .camera-card {
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .camera-view {
+        position: relative;
+        min-height: 560px;
+        background: #020814;
+      }
+      .camera-view video,
+      .camera-view canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .camera-view canvas {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .camera-controls {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .row button, .camera-controls select, .camera-controls input[type="range"] {
+        font: inherit;
+      }
+      .row button {
+        border-radius: 999px;
+        border: 1px solid var(--panel-border);
+        background: rgba(255,255,255,0.04);
+        color: var(--text);
+        padding: 10px 14px;
+        font-weight: 800;
+      }
+      .row button.primary {
+        background: linear-gradient(135deg, rgba(124,168,255,0.95), rgba(99,230,190,0.92));
+        color: #08111d;
+        border: 0;
+      }
+      .meta {
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .preview {
+        display: grid;
+        gap: 8px;
+      }
+      .gallery {
+        display: grid;
+        gap: 8px;
+      }
+      .preview-box {
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--panel-border);
+        background: rgba(255,255,255,0.04);
+      }
+      .preview-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .swatches {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        border: 2px solid rgba(255,255,255,0.7);
+      }
+      .captures-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+        max-height: 300px;
+        overflow: auto;
+      }
+      .capture-item {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid var(--panel-border);
+        background: rgba(255,255,255,0.03);
+      }
+      .capture-item img {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        object-fit: cover;
+      }
+      .capture-item strong,
+      .capture-item span {
+        display: block;
+      }
+      .capture-item span {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.35;
+      }
+      @media (max-width: 980px) {
+        .camera-grid {
+          grid-template-columns: 1fr;
+        }
+        .camera-view {
+          min-height: 360px;
+        }
+      }
+    </style>
+  </head>
+  <body data-page="camara-effects">
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="camera-stage">
+          <div class="section-card">
+            <p class="eyebrow">Camara</p>
+            <h1>Camara Effects</h1>
+            <p class="meta">
+              Abrí la cámara, aplicá filtros básicos y guardá cada captura en Firebase para tu sesión anónima.
+            </p>
+          </div>
+
+          <div class="camera-grid">
+            <section class="camera-card">
+              <div class="camera-view">
+                <video id="video" playsinline autoplay muted></video>
+                <canvas id="overlay"></canvas>
+              </div>
+            </section>
+
+            <aside class="camera-card camera-controls">
+              <div class="row">
+                <button class="primary" id="startBtn">Activar cámara</button>
+                <button id="stopBtn">Detener</button>
+                <button id="captureBtn">Guardar foto</button>
+              </div>
+
+              <label>
+                Efecto
+                <select id="effect">
+                  <option value="none">Normal</option>
+                  <option value="grayscale">Blanco y negro</option>
+                  <option value="sepia">Sepia</option>
+                  <option value="contrast">Contraste fuerte</option>
+                  <option value="blur">Blur suave</option>
+                  <option value="invert">Invertido</option>
+                  <option value="hue">Color girado</option>
+                </select>
+              </label>
+
+              <label>
+                Intensidad
+                <input id="intensity" type="range" min="0" max="100" value="70">
+              </label>
+
+              <label>
+                Glow
+                <input id="glow" type="range" min="0" max="30" value="10">
+              </label>
+
+              <div>
+                <strong id="status">Listo para iniciar.</strong>
+                <div class="meta" id="statusDetail">Tu perfil anónimo ya existe: la foto se guarda para esa sesión.</div>
+              </div>
+
+              <div class="preview">
+                <div class="eyebrow">Última captura</div>
+                <div class="preview-box"><img id="snapshot" alt="Captura con efecto"></div>
+              </div>
+
+              <div class="gallery">
+                <div class="eyebrow">Capturas guardadas</div>
+                <ul id="capturesList" class="captures-list"></ul>
+              </div>
+
+              <div>
+                <div class="eyebrow">Paleta</div>
+                <div class="swatches" id="swatches"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
