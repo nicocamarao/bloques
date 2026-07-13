@@ -727,9 +727,9 @@ canvas.addEventListener("pointerdown", (event) => {
 async function bootstrap() {
   me = await bootstrapProfile();
   const spawn = spawnFor(me);
+  resetGame();
   player.x = spawn.x;
   player.y = spawn.y;
-  resetGame();
   syncCurrentColor(true);
   bootPeople();
   onProfileChange((profile) => {
