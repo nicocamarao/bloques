@@ -59,7 +59,6 @@ const COLOR_HEX = {
   purple: "#9f7aea",
   orange: "#ff9f43",
 };
-let projectiles = [];
 let lastStageColorSeed = 0;
 
 function clamp(value, min, max) {
@@ -171,13 +170,13 @@ function buildWorld() {
 function syncHUD() {
   const active = people.filter((person) => person.online || person.sessionId === me?.sessionId).length;
   countEl.textContent = `${active} online`;
-  scoreEl.textContent = `Puntos: ${points} | HP: ${Math.max(0, Number(me?.hp ?? 10))}`;
+  scoreEl.textContent = `Puntos: ${points}`;
   stageEl.textContent = `Escenario ${currentStage + 1} / ${world.length}`;
   const selected = people.find((person) => person.sessionId === selectedSessionId);
-  selectedEl.textContent = selected ? `Cerca: ${selected.nickname} (${selected.stageColor || "sin color"})` : "Nadie cerca";
+  selectedEl.textContent = selected ? `Cerca: ${selected.nickname}` : "Nadie cerca";
   subtitleEl.textContent = selected
     ? `Compartiendo el mismo recorrido con ${selected.nickname}.`
-    : "La cara, el color y la posición viajan por Realtime Database, como en Fiuma.";
+    : "La cara y la posición viajan por Realtime Database, como en Fiuma.";
 }
 
 function resetGame() {
@@ -194,8 +193,6 @@ function resetGame() {
     vx: 0,
     vy: 0,
     total: 1,
-    hp: 10,
-    stageColor: pickStageColor(0),
     onGround: false,
     _jumpLatch: false,
   };
@@ -336,13 +333,10 @@ function advanceStageIfNeeded() {
     const nextStage = currentStageData();
     player.x = nextStage.baseX + 50;
     player.y = 410;
-    player.vx = 0;
-    player.vy = 0;
+      player.vx = 0;
+      player.vy = 0;
     player.onGround = false;
     cameraX = nextStage.baseX;
-    player.hp = 10;
-    player.stageColor = pickStageColor(currentStage);
-    projectiles = [];
     syncHUD();
     updatePresence(true).catch(() => {});
   }
@@ -356,7 +350,6 @@ function update(dt) {
   handleMovement(dt);
   moveAndCollide(dt);
   pickupFriends();
-  updateProjectiles(dt);
   advanceStageIfNeeded();
   cameraX += (player.x - cameraX - canvas.width / DPR / 2) * Math.min(1, dt * 3.5);
   cameraX = clamp(cameraX, currentStageData().baseX - 40, currentStageData().baseX + LEVEL_LENGTH - canvas.width / DPR + 120);
@@ -391,16 +384,8 @@ function drawFace(x, y, w, h, person = null, isHero = false) {
     ctx.arc(w * 0.5, h * 0.54, 8, 0.12 * Math.PI, 0.88 * Math.PI);
     ctx.stroke();
   }
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = COLOR_HEX[person?.stageColor] || (isHero ? "#5ad7ff" : "#ffd166");
-  roundRect(0, 0, w, h, 12, true);
-  ctx.globalAlpha = 1;
   ctx.fillStyle = "rgba(255,255,255,0.22)";
   ctx.fillRect(3, 3, w - 6, 7);
-  ctx.fillStyle = "#fff";
-  ctx.font = "700 11px Trebuchet MS, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(String(Number(person?.hp ?? 10)), w / 2, h - 6);
   ctx.restore();
 }
 
@@ -423,19 +408,6 @@ function drawNumberFace(x, y, w, h, value, fill, shadow) {
   ctx.textBaseline = "middle";
   ctx.fillText(String(value), w / 2, h / 2 + 1);
   ctx.restore();
-}
-
-function drawProjectiles() {
-  for (const shot of projectiles) {
-    ctx.save();
-    ctx.fillStyle = COLOR_HEX[shot.color] || "#fff";
-    ctx.shadowColor = COLOR_HEX[shot.color] || "#fff";
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-    ctx.roundRect(shot.x - cameraX, shot.y, 22, 8, 999);
-    ctx.fill();
-    ctx.restore();
-  }
 }
 
 function roundRect(x, y, w, h, r, fill = false, fillStyle = null) {
@@ -537,51 +509,6 @@ function drawPlayer() {
   ctx.fillText(`${me?.nickname || "Tú"} · ${player.total}`, player.x - cameraX + player.w / 2, player.y - 8);
 }
 
-function firePower() {
-  if (!me || gameState !== "playing") return;
-  projectiles.push({
-    x: player.x + player.w + 2,
-    y: player.y + player.h / 2 - 4,
-    vx: 720,
-    color: me.stageColor || "blue",
-    ownerSessionId: me.sessionId,
-  });
-}
-
-function applyDamage(target, shot) {
-  const same = String(shot.color) === String(target.stageColor);
-  const nextHp = clamp(Number(target.hp ?? 10) + (same ? 1 : -1), 0, 10);
-  target.hp = nextHp;
-  if (target.sessionId === me?.sessionId) {
-    me = { ...me, hp: nextHp };
-  } else {
-    const index = people.findIndex((item) => item.sessionId === target.sessionId);
-    if (index !== -1) people[index] = { ...people[index], hp: nextHp };
-  }
-  return same;
-}
-
-function updateProjectiles(dt) {
-  const activeTargets = people.filter((person) => person.online || person.sessionId === me?.sessionId);
-  projectiles = projectiles.filter((shot) => {
-    shot.x += shot.vx * dt;
-    const shotBox = { x: shot.x, y: shot.y, w: 22, h: 8 };
-    const target = activeTargets.find((person) => {
-      if (person.sessionId === shot.ownerSessionId) return false;
-      if (person.worldScene !== WORLD_ID && person.sessionId !== me?.sessionId) return false;
-      const px = person.sessionId === me?.sessionId ? player.x : (Number.isFinite(person.worldX) ? person.worldX : spawnFor(person).x);
-      const py = person.sessionId === me?.sessionId ? player.y : (Number.isFinite(person.worldY) ? person.worldY : spawnFor(person).y);
-      return rectsOverlap(shotBox, { x: px, y: py, w: 32, h: 42 });
-    });
-    if (target) {
-      applyDamage(target, shot);
-      syncHUD();
-      return false;
-    }
-    return shot.x - cameraX < canvas.width / DPR + 80;
-  });
-}
-
 function drawHUD(stage) {
   const w = canvas.width / DPR;
   ctx.save();
@@ -620,7 +547,6 @@ function render() {
   drawGate(stage);
   drawFriends(stage);
   drawPeople(stage);
-  drawProjectiles();
   drawPlayer();
   drawHUD(stage);
   if (gameState !== "playing") {
@@ -640,24 +566,12 @@ function updatePresence(online = true) {
     worldX: player.x,
     worldY: player.y,
     worldUpdatedAt: Date.now(),
-    stageColor: me.stageColor,
-    hp: Number(me.hp ?? 10),
   });
 }
 
 function selectedAtPlayer() {
   const near = people.find((person) => person.sessionId !== me?.sessionId && person.worldScene === WORLD_ID && Math.abs((person.worldX ?? -999) - player.x) < 60 && Math.abs((person.worldY ?? -999) - player.y) < 60);
   selectedSessionId = near?.sessionId || "";
-}
-
-function nearestTarget() {
-  return people.find((person) => person.sessionId !== me?.sessionId && person.worldScene === WORLD_ID && Math.abs((person.worldX ?? -999) - player.x) < 140 && Math.abs((person.worldY ?? -999) - player.y) < 80);
-}
-
-function fireAtNearest() {
-  const target = nearestTarget();
-  if (target) selectedSessionId = target.sessionId;
-  firePower();
 }
 
 function bootPeople() {
@@ -694,7 +608,6 @@ window.addEventListener("resize", resize);
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
   if (e.code === "KeyR") resetGame();
-  if (e.code === "KeyF" || e.code === "KeyJ") fireAtNearest();
   if (["ArrowUp", "Space", "ArrowLeft", "ArrowRight", "KeyA", "KeyD", "KeyW"].includes(e.code)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => keys.delete(e.code));
@@ -715,8 +628,6 @@ document.querySelectorAll("[data-action], [data-reset]").forEach((button) => {
   button.addEventListener("pointerleave", up);
   button.addEventListener("pointercancel", up);
 });
-
-document.querySelector("[data-fire]")?.addEventListener("pointerdown", () => fireAtNearest());
 
 canvas.addEventListener("pointerdown", (event) => {
   canvas.setPointerCapture?.(event.pointerId);
