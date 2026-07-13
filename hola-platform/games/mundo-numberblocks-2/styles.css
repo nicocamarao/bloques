@@ -42,7 +42,8 @@
   grid-template-columns: repeat(3, 1fr);
   grid-template-areas:
     ". up ."
-    "left reset right";
+    "left reset right"
+    ". fire .";
   gap: 10px;
 }
 
@@ -60,6 +61,7 @@
 .mobile-controls button[data-action="left"] { grid-area: left; }
 .mobile-controls button[data-action="right"] { grid-area: right; }
 .mobile-controls button[data-reset] { grid-area: reset; background: rgba(99, 230, 190, 0.20); }
+.mobile-controls button[data-fire] { grid-area: fire; background: rgba(255, 209, 102, 0.22); }
 
 @media (max-width: 900px) {
   .hud { flex-direction: column; }
