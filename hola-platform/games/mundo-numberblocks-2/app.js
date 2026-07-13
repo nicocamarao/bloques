@@ -196,7 +196,7 @@ function currentStageData() {
 }
 
 function isGateSatisfied(stage) {
-  return player.total === stage.target;
+  return player.total >= stage.target;
 }
 
 function openGateIfReady(stage) {
