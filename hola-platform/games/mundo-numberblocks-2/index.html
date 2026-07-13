@@ -8,37 +8,31 @@
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
-    <div id="site-top"></div>
-    <div class="site-shell">
-      <aside id="site-sidebar" class="site-sidebar"></aside>
-      <main id="site-main" class="site-main">
-        <section class="shell">
-          <header class="hud">
-            <div>
-              <p class="eyebrow">Aventura social</p>
-              <h1>Mundo Numberblocks 2</h1>
-              <p id="nb2-subtitle">Misma física, mismo escenario lineal y avatares con cara, online en tiempo real.</p>
-            </div>
-            <div class="controls">
-              <span id="nb2-count">0 online</span>
-              <span id="nb2-score">Puntos: 0</span>
-              <span id="nb2-stage">Escenario 1 / 5</span>
-              <span id="nb2-selected">Nadie cerca</span>
-            </div>
-          </header>
+    <a class="back-link" href="../../index.html">← Back</a>
+    <main class="shell">
+      <header class="hud">
+        <div>
+          <p class="eyebrow">Aventura social</p>
+          <h1>Mundo Numberblocks 2</h1>
+          <p id="nb2-subtitle">Misma física, mismo escenario lineal y avatares con cara, online en tiempo real.</p>
+        </div>
+        <div class="controls">
+          <span id="nb2-count">0 online</span>
+          <span id="nb2-score">Puntos: 0</span>
+          <span id="nb2-stage">Escenario 1 / 5</span>
+          <span id="nb2-selected">Nadie cerca</span>
+        </div>
+      </header>
 
-          <canvas id="game" aria-label="Juego Mundo Numberblocks 2"></canvas>
+      <canvas id="game" aria-label="Juego Mundo Numberblocks 2"></canvas>
 
-          <section class="mobile-controls" aria-hidden="true">
-            <button data-action="jump" type="button" aria-label="Arriba">▲</button>
-            <button data-action="left" type="button" aria-label="Izquierda">◀</button>
-            <button data-reset type="button" aria-label="Reiniciar">↺</button>
-            <button data-action="right" type="button" aria-label="Derecha">▶</button>
-          </section>
-        </section>
-      </main>
-    </div>
-    <script type="module" src="../../shared/site.js"></script>
+      <section class="mobile-controls" aria-hidden="true">
+        <button data-action="jump" type="button" aria-label="Arriba">▲</button>
+        <button data-action="left" type="button" aria-label="Izquierda">◀</button>
+        <button data-reset type="button" aria-label="Reiniciar">↺</button>
+        <button data-action="right" type="button" aria-label="Derecha">▶</button>
+      </section>
+    </main>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
