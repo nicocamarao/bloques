@@ -120,7 +120,19 @@ function makeStage(index) {
     { x: baseX + 990, y: groundY - 40 },
   ];
   const target = Math.min(200, (index + 1) * 10);
-  const friendValues = index === 4 ? [9] : index === 5 ? [4, 6] : index === 6 ? [7, 3] : index === 7 ? [2, 8] : index === 8 ? [5, 5] : [Math.max(1, (index % 9) + 1)];
+  const friendValues = index === 0
+    ? [5, 5]
+    : index === 4
+      ? [9]
+      : index === 5
+        ? [4, 6]
+        : index === 6
+          ? [7, 3]
+          : index === 7
+            ? [2, 8]
+            : index === 8
+              ? [5, 5]
+              : [Math.max(1, (index % 9) + 1)];
   const friends = friendValues.map((value, i) => ({
     x: friendLayout[i].x,
     y: friendLayout[i].y,
@@ -339,8 +351,8 @@ function advanceStageIfNeeded() {
     const nextStage = currentStageData();
     player.x = nextStage.baseX + 50;
     player.y = 410;
-      player.vx = 0;
-      player.vy = 0;
+    player.vx = 0;
+    player.vy = 0;
     player.onGround = false;
     cameraX = nextStage.baseX;
     syncHUD();
