@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mundo Fiuma 3</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="../game.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="game-page fiuma3-page">
+          <header class="game-hero fiuma3-hero">
+            <div>
+              <p class="eyebrow">Mundo social</p>
+              <h1>Mundo Fiuma 3</h1>
+              <p id="fiuma3-subtitle">Un mundo minimalista para mirar personas online, tocarlas y reaccionar con emoticones.</p>
+            </div>
+            <div class="game-badges">
+              <span class="pill" id="fiuma3-count">0 online</span>
+              <span class="pill" id="fiuma3-selected">Nadie seleccionado</span>
+              <span class="pill" id="fiuma3-status">Listo</span>
+            </div>
+          </header>
+
+          <section class="game-stage stack fiuma3-stack">
+            <div class="fiuma3-world">
+              <div id="fiuma3-board" class="fiuma3-board" aria-label="Mundo Fiuma 3"></div>
+            </div>
+
+            <section class="fiuma3-panel">
+              <div class="fiuma3-panel-head">
+                <strong>Reacciones</strong>
+                <span>Toca a alguien y luego un emoji</span>
+              </div>
+              <div id="fiuma3-emojis" class="fiuma3-emojis" aria-label="Emoticones"></div>
+            </section>
+
+            <section class="fiuma3-panel">
+              <div class="fiuma3-panel-head">
+                <strong>Tabla de posiciones</strong>
+                <span>Reacciones enviadas</span>
+              </div>
+              <ol id="fiuma3-leaderboard" class="fiuma3-leaderboard"></ol>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

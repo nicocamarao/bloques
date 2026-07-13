@@ -27,6 +27,7 @@ const resolveHref = (path) => new URL(path, import.meta.url).href;
 const GAMES = [
   { id: "home", label: "Inicio", href: resolveHref("../index.html") },
   { id: "mundo-fiuma", label: "Mundo Fiuma", href: resolveHref("../games/mundo-fiuma/index.html") },
+  { id: "mundo-fiuma-3", label: "Mundo Fiuma 3", href: resolveHref("../games/mundo-fiuma-3/index.html") },
   { id: "mundo-fiuma-2", label: "Mundo Fiuma 2", href: resolveHref("../games/mundo-fiuma-2/index.html") },
   { id: "mini-territorio", label: "Mini territorio de amigos", href: resolveHref("../games/mini-territorio/index.html") },
   { id: "mundo-numberblocks", label: "Mundo Numberblocks", href: resolveHref("../games/mundo-numberblocks/index.html") },
