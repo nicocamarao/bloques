@@ -684,11 +684,9 @@ async function bootstrap() {
   resetGame();
   player.x = spawn.x;
   player.y = spawn.y;
-  syncCurrentColor(true);
   bootPeople();
   onProfileChange((profile) => {
     me = profile;
-    syncCurrentColor(true);
     syncHUD();
   });
   heartbeatTimer = window.setInterval(() => {
