@@ -739,7 +739,7 @@ async function bootstrap() {
   });
   heartbeatTimer = window.setInterval(() => {
     updatePresence(true).catch(() => {});
-  }, 1400);
+  }, 140);
   await setPresence();
   window.addEventListener("beforeunload", () => {
     if (heartbeatTimer) window.clearInterval(heartbeatTimer);
