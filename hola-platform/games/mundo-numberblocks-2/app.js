@@ -24,14 +24,7 @@ const PLAYER_H = 42;
 const LEVEL_LENGTH = 1200;
 const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-2";
-
-const stageTemplates = [
-  { target: 10, friends: [9] },
-  { target: 20, friends: [4, 6] },
-  { target: 30, friends: [7, 3] },
-  { target: 40, friends: [2, 8] },
-  { target: 50, friends: [5, 5] },
-];
+const TOTAL_STAGES = 20;
 
 const keys = new Set();
 const mobile = { left: false, right: false, jump: false };
@@ -49,17 +42,8 @@ let peopleUnsub = null;
 let heartbeatTimer = null;
 let selectedSessionId = "";
 let points = 0;
+let inventory = { greenKey: false, greenChestOpen: false };
 const avatarCache = new Map();
-const COLORS = ["red", "blue", "green", "yellow", "purple", "orange"];
-const COLOR_HEX = {
-  red: "#ff5c7a",
-  blue: "#5ad7ff",
-  green: "#62e6a2",
-  yellow: "#ffd166",
-  purple: "#9f7aea",
-  orange: "#ff9f43",
-};
-let lastStageColorSeed = 0;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -100,22 +84,6 @@ function spawnFor(person) {
   return { x: hash % 180, y: 410 };
 }
 
-function pickStageColor(seedValue = 0) {
-  const seed = hashString(`${WORLD_ID}:${currentStage}:${seedValue}:${Date.now()}`);
-  return COLORS[seed % COLORS.length];
-}
-
-function syncCurrentColor(force = false) {
-  if (!me) return;
-  if (!force && lastStageColorSeed === currentStage) return;
-  lastStageColorSeed = currentStage;
-  me = {
-    ...me,
-    stageColor: pickStageColor(currentStage),
-    hp: Number.isFinite(me.hp) ? me.hp : 10,
-  };
-}
-
 function faceFor(person) {
   return person.photoDataUrl || avatarFallback(person.nickname);
 }
@@ -134,7 +102,7 @@ function stageData() {
   return world[currentStage];
 }
 
-function makeStage(index, template) {
+function makeStage(index) {
   const baseX = index * LEVEL_LENGTH;
   const groundY = 458;
   const gateX = baseX + LEVEL_LENGTH - 150;
@@ -151,7 +119,9 @@ function makeStage(index, template) {
     { x: baseX + 860, y: 308 },
     { x: baseX + 990, y: groundY - 40 },
   ];
-  const friends = template.friends.map((value, i) => ({
+  const target = Math.min(200, (index + 1) * 10);
+  const friendValues = index === 4 ? [9] : index === 5 ? [4, 6] : index === 6 ? [7, 3] : index === 7 ? [2, 8] : index === 8 ? [5, 5] : [Math.max(1, (index % 9) + 1)];
+  const friends = friendValues.map((value, i) => ({
     x: friendLayout[i].x,
     y: friendLayout[i].y,
     w: 32,
@@ -159,12 +129,15 @@ function makeStage(index, template) {
     value,
     collected: false,
   }));
-  return { index, target: template.target, baseX, groundY, gateX, platforms, friends, gateOpen: false };
+  const stage = { index, target, baseX, groundY, gateX, platforms, friends, gateOpen: false };
+  if (index === 4) stage.key = { color: "green", x: baseX + 1020, y: groundY - 40, opened: false };
+  if (index === 5) stage.chest = { color: "green", x: baseX + 300, y: 408, opened: false };
+  return stage;
 }
 
 function buildWorld() {
   world.length = 0;
-  stageTemplates.forEach((template, index) => world.push(makeStage(index, template)));
+  for (let index = 0; index < TOTAL_STAGES; index += 1) world.push(makeStage(index));
 }
 
 function syncHUD() {
@@ -179,8 +152,8 @@ function syncHUD() {
     : "La cara y la posición viajan por Realtime Database, como en Fiuma.";
 }
 
-function resetGame() {
-  buildWorld();
+function resetGame(preserveProgress = false) {
+  if (!world.length) buildWorld();
   currentStage = 0;
   gameState = "playing";
   winFlash = 0;
@@ -197,7 +170,12 @@ function resetGame() {
     _jumpLatch: false,
   };
   cameraX = 0;
-  points = 0;
+  if (!preserveProgress) {
+    points = 0;
+    inventory = { greenKey: false, greenChestOpen: false };
+    buildWorld();
+  }
+  if (preserveProgress && currentStageData()) currentStageData().gateOpen = false;
   syncHUD();
 }
 
@@ -210,6 +188,10 @@ function isGateSatisfied(stage) {
 }
 
 function openGateIfReady(stage) {
+  if (stage.index >= 6 && !inventory.greenChestOpen) {
+    stage.gateOpen = false;
+    return;
+  }
   stage.gateOpen = isGateSatisfied(stage);
 }
 
@@ -308,11 +290,35 @@ function pickupFriends() {
       player.total += friend.value;
       points += friend.value;
       syncHUD();
-      player.y = friend.y - player.h - 0.1;
-      player.vy = 0;
-      player.onGround = true;
       setPresence().catch(() => {});
       recordScore(WORLD_ID, points, { label: "Numberblocks 2", details: `Escenario ${currentStage + 1}` }).catch(() => {});
+    }
+  }
+}
+
+function pickupSpecialItems() {
+  const stage = currentStageData();
+  const body = { x: player.x - 2, y: player.y - 4, w: player.w + 4, h: player.h + 8 };
+
+  if (stage.key && !stage.key.opened) {
+    const keyBody = { x: stage.key.x - 8, y: stage.key.y - 8, w: 48, h: 48 };
+    if (rectsOverlap(body, keyBody)) {
+      stage.key.opened = true;
+      inventory.greenKey = true;
+      points += 5;
+      syncHUD();
+      setPresence().catch(() => {});
+    }
+  }
+
+  if (stage.chest && !stage.chest.opened) {
+    const chestBody = { x: stage.chest.x - 8, y: stage.chest.y - 8, w: 56, h: 44 };
+    if (rectsOverlap(body, chestBody) && inventory.greenKey) {
+      stage.chest.opened = true;
+      inventory.greenChestOpen = true;
+      points += 10;
+      syncHUD();
+      setPresence().catch(() => {});
     }
   }
 }
@@ -350,6 +356,7 @@ function update(dt) {
   handleMovement(dt);
   moveAndCollide(dt);
   pickupFriends();
+  pickupSpecialItems();
   advanceStageIfNeeded();
   cameraX += (player.x - cameraX - canvas.width / DPR / 2) * Math.min(1, dt * 3.5);
   cameraX = clamp(cameraX, currentStageData().baseX - 40, currentStageData().baseX + LEVEL_LENGTH - canvas.width / DPR + 120);
@@ -484,6 +491,40 @@ function drawFriends(stage) {
   }
 }
 
+function drawKey(item, cameraOffsetX) {
+  if (!item || item.opened) return;
+  const x = item.x - cameraOffsetX;
+  ctx.save();
+  ctx.fillStyle = "#62e6a2";
+  ctx.shadowColor = "rgba(0,0,0,0.25)";
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.arc(x + 16, item.y + 18, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(x + 22, item.y + 14, 22, 8);
+  ctx.fillRect(x + 36, item.y + 10, 8, 16);
+  ctx.restore();
+  ctx.fillStyle = "#fff";
+  ctx.font = "18px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🔑", x + 16, item.y + 28);
+}
+
+function drawChest(item, cameraOffsetX) {
+  if (!item || item.opened) return;
+  const x = item.x - cameraOffsetX;
+  ctx.save();
+  ctx.fillStyle = "#7a4c1f";
+  roundRect(x, item.y, 54, 40, 8, true, "#7a4c1f");
+  ctx.fillStyle = "#62e6a2";
+  ctx.fillRect(x + 6, item.y + 16, 42, 6);
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🧰", x + 27, item.y + 28);
+  ctx.restore();
+}
+
 function drawPeople(stage) {
   const active = people.filter((person) => person.online || person.sessionId === me?.sessionId);
   for (const person of active) {
@@ -522,7 +563,7 @@ function drawHUD(stage) {
   ctx.fillText(`Suma actual: ${player.total}`, 18, 60);
   ctx.fillText(`Puntos comidos: ${points}`, 18, 82);
   ctx.fillText(`Meta del muro: ${stage.target}`, 18, 104);
-  ctx.fillText(`Amigos restantes: ${stage.friends.filter((f) => !f.collected).length}`, 18, 126);
+  ctx.fillText(`Llave verde: ${inventory.greenKey ? "sí" : "no"}`, 18, 126);
   ctx.restore();
 
   if (gameState === "won") {
@@ -546,6 +587,8 @@ function render() {
   drawPlatforms(stage);
   drawGate(stage);
   drawFriends(stage);
+  drawKey(stage.key, cameraX);
+  drawChest(stage.chest, cameraX);
   drawPeople(stage);
   drawPlayer();
   drawHUD(stage);
@@ -607,14 +650,14 @@ function resize() {
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", (e) => {
   keys.add(e.code);
-  if (e.code === "KeyR") resetGame();
+  if (e.code === "KeyR") resetGame(true);
   if (["ArrowUp", "Space", "ArrowLeft", "ArrowRight", "KeyA", "KeyD", "KeyW"].includes(e.code)) e.preventDefault();
 });
 window.addEventListener("keyup", (e) => keys.delete(e.code));
 
 document.querySelectorAll("[data-action], [data-reset]").forEach((button) => {
   if (button.hasAttribute("data-reset")) {
-    button.addEventListener("pointerdown", () => resetGame());
+    button.addEventListener("pointerdown", () => resetGame(true));
     return;
   }
   const action = button.dataset.action;
