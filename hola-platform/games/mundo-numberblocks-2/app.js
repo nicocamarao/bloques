@@ -19,8 +19,8 @@ const WORLD_HEIGHT = 540;
 const GRAVITY = 2200;
 const MOVE_SPEED = 320;
 const JUMP_SPEED = 760;
-const PLAYER_BASE = 24;
-const PLAYER_H = 49;
+const PLAYER_BASE = 32;
+const PLAYER_H = 66;
 const LEVEL_LENGTH = 1200;
 const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-2";
@@ -585,7 +585,7 @@ function drawPeople(stage) {
 function drawPlayer() {
   const x = player.x - cameraX;
   if (PLAYER_SPRITE.complete && PLAYER_SPRITE.naturalWidth > 0) {
-    ctx.drawImage(PLAYER_SPRITE, x, player.y - 1, player.w, player.h + 1);
+    ctx.drawImage(PLAYER_SPRITE, x, player.y - 12, player.w, player.h + 12);
   } else {
     drawFace(x, player.y, player.w, player.h, me, true);
   }
