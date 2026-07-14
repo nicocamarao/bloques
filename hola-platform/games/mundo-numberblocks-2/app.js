@@ -373,12 +373,12 @@ function advanceStageIfNeeded() {
       return;
     }
     const nextStage = currentStageData();
-    player.x = nextStage.baseX + 140;
+    player.x = nextStage.baseX + 300;
     player.y = 410;
     player.vx = 0;
     player.vy = 0;
     player.onGround = false;
-    cameraX = nextStage.baseX + 40;
+    cameraX = nextStage.baseX + 150;
     syncHUD();
     updatePresence(true).catch(() => {});
   }
