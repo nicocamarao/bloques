@@ -58,9 +58,10 @@ let selectedSessionId = "";
 let points = 0;
 let inventory = { keys: {}, chestsOpen: {} };
 const avatarCache = new Map();
-const PLAYER_SPRITE = new Image();
+const PLAYER_SPRITE_SRC = new URL("./character.png", import.meta.url).href;
+let PLAYER_SPRITE = new Image();
 PLAYER_SPRITE.decoding = "async";
-PLAYER_SPRITE.src = new URL("./character.png", import.meta.url).href;
+PLAYER_SPRITE.src = PLAYER_SPRITE_SRC;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -113,6 +114,12 @@ function avatarImage(src) {
     avatarCache.set(src, image);
   }
   return avatarCache.get(src);
+}
+
+function reloadPlayerSprite() {
+  PLAYER_SPRITE = new Image();
+  PLAYER_SPRITE.decoding = "async";
+  PLAYER_SPRITE.src = PLAYER_SPRITE_SRC;
 }
 
 function colorStyle(color) {
@@ -373,12 +380,13 @@ function advanceStageIfNeeded() {
       return;
     }
     const nextStage = currentStageData();
-    player.x = nextStage.baseX + 300;
+    reloadPlayerSprite();
+    player.x = nextStage.baseX + 50;
     player.y = 410;
     player.vx = 0;
     player.vy = 0;
     player.onGround = false;
-    cameraX = nextStage.baseX + 150;
+    cameraX = nextStage.baseX;
     syncHUD();
     updatePresence(true).catch(() => {});
   }
@@ -732,6 +740,7 @@ canvas.addEventListener("pointerdown", (event) => {
 
 async function bootstrap() {
   me = await bootstrapProfile();
+  reloadPlayerSprite();
   const spawn = spawnFor(me);
   resetGame();
   player.x = spawn.x;
