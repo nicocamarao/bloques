@@ -339,6 +339,12 @@ function advanceStageIfNeeded() {
       recordScore(WORLD_ID, score, { label: "Mundo Numberblocks 3" }).catch(() => {});
       return;
     }
+    const nextStage = currentStageData();
+    player.x = nextStage.baseX + PLAYER_SCREEN_X;
+    player.y = 410;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = false;
     syncHUD();
   }
 }
@@ -353,7 +359,7 @@ function update(dt) {
   pickupFriends();
   pickupSpecialItems();
   advanceStageIfNeeded();
-  cameraX = clamp(player.x - PLAYER_SCREEN_X, currentStageData().baseX - 40, currentStageData().baseX + LEVEL_LENGTH - canvas.width / DPR + 120);
+  cameraX = player.x - PLAYER_SCREEN_X;
   if (player.y > WORLD_HEIGHT + 200) resetGame();
 }
 
