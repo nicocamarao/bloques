@@ -176,7 +176,18 @@ function resetGame(preserveProgress = false) {
   gameState = "playing";
   winFlash = 0;
   startTime = performance.now();
-  player = { x: PLAYER_SCREEN_X, y: 410, w: PLAYER_BASE, h: PLAYER_H, vx: 0, vy: 0, total: 1, onGround: false, _jumpLatch: false };
+  const groundY = stageData()?.groundY ?? 458;
+  player = {
+    x: PLAYER_SCREEN_X,
+    y: groundY - PLAYER_H - 1,
+    w: PLAYER_BASE,
+    h: PLAYER_H,
+    vx: 0,
+    vy: 0,
+    total: 1,
+    onGround: true,
+    _jumpLatch: false,
+  };
   cameraX = 0;
   if (!preserveProgress) {
     points = 0;
@@ -341,10 +352,10 @@ function advanceStageIfNeeded() {
     }
     const nextStage = currentStageData();
     player.x = nextStage.baseX + PLAYER_SCREEN_X;
-    player.y = 410;
+    player.y = nextStage.groundY - player.h - 1;
     player.vx = 0;
     player.vy = 0;
-    player.onGround = false;
+    player.onGround = true;
     syncHUD();
   }
 }
@@ -649,7 +660,8 @@ async function bootstrap() {
   const spawn = spawnFor(me);
   resetGame();
   player.x = spawn.x;
-  player.y = spawn.y;
+  player.y = stageData().groundY - player.h - 1;
+  player.onGround = true;
   bootPeople();
   onProfileChange((profile) => {
     me = profile;
