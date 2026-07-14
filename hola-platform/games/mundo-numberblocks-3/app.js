@@ -158,6 +158,20 @@ function buildWorld() {
   for (let i = 0; i < TOTAL_STAGES; i += 1) world.push(makeStage(i));
 }
 
+function enterStage(index) {
+  currentStage = clamp(index, 0, Math.max(0, world.length - 1));
+  const stage = currentStageData();
+  const groundY = stage?.groundY ?? 458;
+  player.x = stage.baseX + PLAYER_SCREEN_X;
+  player.y = groundY - player.h - 1;
+  player.vx = 0;
+  player.vy = 0;
+  player.onGround = true;
+  player._jumpLatch = false;
+  cameraX = player.x - PLAYER_SCREEN_X;
+  stage.gateOpen = false;
+}
+
 function syncHUD() {
   const active = people.filter((p) => p.online || p.sessionId === me?.sessionId).length;
   countEl.textContent = `${active} online`;
@@ -172,14 +186,12 @@ function syncHUD() {
 
 function resetGame(preserveProgress = false) {
   if (!world.length) buildWorld();
-  currentStage = 0;
   gameState = "playing";
   winFlash = 0;
   startTime = performance.now();
-  const groundY = stageData()?.groundY ?? 458;
   player = {
     x: PLAYER_SCREEN_X,
-    y: groundY - PLAYER_H - 1,
+    y: 410,
     w: PLAYER_BASE,
     h: PLAYER_H,
     vx: 0,
@@ -188,12 +200,12 @@ function resetGame(preserveProgress = false) {
     onGround: true,
     _jumpLatch: false,
   };
-  cameraX = 0;
   if (!preserveProgress) {
     points = 0;
     inventory = { keys: {}, chestsOpen: {} };
     buildWorld();
   }
+  enterStage(0);
   if (preserveProgress && stageData()) stageData().gateOpen = false;
   syncHUD();
 }
@@ -350,12 +362,7 @@ function advanceStageIfNeeded() {
       recordScore(WORLD_ID, score, { label: "Mundo Numberblocks 3" }).catch(() => {});
       return;
     }
-    const nextStage = currentStageData();
-    player.x = nextStage.baseX + PLAYER_SCREEN_X;
-    player.y = nextStage.groundY - player.h - 1;
-    player.vx = 0;
-    player.vy = 0;
-    player.onGround = true;
+    enterStage(currentStage);
     syncHUD();
   }
 }
@@ -662,6 +669,7 @@ async function bootstrap() {
   player.x = spawn.x;
   player.y = stageData().groundY - player.h - 1;
   player.onGround = true;
+  cameraX = player.x - PLAYER_SCREEN_X;
   bootPeople();
   onProfileChange((profile) => {
     me = profile;
