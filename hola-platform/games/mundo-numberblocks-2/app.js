@@ -19,12 +19,26 @@ const WORLD_HEIGHT = 540;
 const GRAVITY = 2200;
 const MOVE_SPEED = 320;
 const JUMP_SPEED = 760;
-const PLAYER_BASE = 30;
-const PLAYER_H = 42;
+const PLAYER_BASE = 24;
+const PLAYER_H = 49;
 const LEVEL_LENGTH = 1200;
 const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-2";
 const TOTAL_STAGES = 20;
+const STAGE_TARGET = 10;
+const ITEM_COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "lime", "gold"];
+const ITEM_STYLES = {
+  red: { fill: "#ff5c7a", band: "#ffd1da", glow: "rgba(255, 92, 122, 0.35)", label: "roja" },
+  blue: { fill: "#5ad7ff", band: "#d5f6ff", glow: "rgba(90, 215, 255, 0.35)", label: "azul" },
+  green: { fill: "#62e6a2", band: "#c6f6dd", glow: "rgba(98, 230, 162, 0.35)", label: "verde" },
+  yellow: { fill: "#ffd166", band: "#fff0bf", glow: "rgba(255, 209, 102, 0.35)", label: "amarilla" },
+  purple: { fill: "#b197fc", band: "#e5dbff", glow: "rgba(177, 151, 252, 0.35)", label: "violeta" },
+  orange: { fill: "#ff9f43", band: "#ffd8a8", glow: "rgba(255, 159, 67, 0.35)", label: "naranja" },
+  pink: { fill: "#ff87c8", band: "#ffd6eb", glow: "rgba(255, 135, 200, 0.35)", label: "rosa" },
+  cyan: { fill: "#63e6be", band: "#c3fae8", glow: "rgba(99, 230, 190, 0.35)", label: "cian" },
+  lime: { fill: "#a9e34b", band: "#e9fac8", glow: "rgba(169, 227, 75, 0.35)", label: "lima" },
+  gold: { fill: "#f59f00", band: "#ffe8a3", glow: "rgba(245, 159, 0, 0.35)", label: "dorada" },
+};
 
 const keys = new Set();
 const mobile = { left: false, right: false, jump: false };
@@ -42,8 +56,11 @@ let peopleUnsub = null;
 let heartbeatTimer = null;
 let selectedSessionId = "";
 let points = 0;
-let inventory = { greenKey: false, greenChestOpen: false };
+let inventory = { keys: {}, chestsOpen: {} };
 const avatarCache = new Map();
+const PLAYER_SPRITE = new Image();
+PLAYER_SPRITE.decoding = "async";
+PLAYER_SPRITE.src = new URL("./character.png", import.meta.url).href;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -98,6 +115,24 @@ function avatarImage(src) {
   return avatarCache.get(src);
 }
 
+function colorStyle(color) {
+  return ITEM_STYLES[color] || ITEM_STYLES.red;
+}
+
+function colorLabel(color) {
+  return colorStyle(color).label;
+}
+
+function randomTenPair() {
+  const first = 1 + Math.floor(Math.random() * (STAGE_TARGET - 1));
+  const second = STAGE_TARGET - first;
+  return Math.random() < 0.5 ? [first, second] : [second, first];
+}
+
+function colorForStage(index) {
+  return ITEM_COLORS[Math.floor(index / 2) % ITEM_COLORS.length];
+}
+
 function stageData() {
   return world[currentStage];
 }
@@ -119,20 +154,9 @@ function makeStage(index) {
     { x: baseX + 860, y: 308 },
     { x: baseX + 990, y: groundY - 40 },
   ];
-  const target = Math.min(200, (index + 1) * 10);
-  const friendValues = index === 0
-    ? [5, 5]
-    : index === 4
-      ? [9]
-      : index === 5
-        ? [4, 6]
-        : index === 6
-          ? [7, 3]
-          : index === 7
-            ? [2, 8]
-            : index === 8
-              ? [5, 5]
-              : [Math.max(1, (index % 9) + 1)];
+  const target = STAGE_TARGET;
+  const friendValues = randomTenPair();
+  const itemColor = colorForStage(index);
   const friends = friendValues.map((value, i) => ({
     x: friendLayout[i].x,
     y: friendLayout[i].y,
@@ -142,8 +166,8 @@ function makeStage(index) {
     collected: false,
   }));
   const stage = { index, target, baseX, groundY, gateX, platforms, friends, gateOpen: false };
-  if (index === 4) stage.key = { color: "green", x: baseX + 1020, y: groundY - 40, opened: false };
-  if (index === 5) stage.chest = { color: "green", x: baseX + 300, y: 408, opened: false };
+  if (index % 2 === 0) stage.key = { color: itemColor, x: baseX + 180, y: groundY - 40, opened: false };
+  if (index % 2 === 1) stage.chest = { color: itemColor, x: baseX + 260, y: 408, opened: false };
   return stage;
 }
 
@@ -184,7 +208,7 @@ function resetGame(preserveProgress = false) {
   cameraX = 0;
   if (!preserveProgress) {
     points = 0;
-    inventory = { greenKey: false, greenChestOpen: false };
+    inventory = { keys: {}, chestsOpen: {} };
     buildWorld();
   }
   if (preserveProgress && currentStageData()) currentStageData().gateOpen = false;
@@ -200,7 +224,7 @@ function isGateSatisfied(stage) {
 }
 
 function openGateIfReady(stage) {
-  if (stage.index >= 6 && !inventory.greenChestOpen) {
+  if (stage.chest && !inventory.chestsOpen[stage.chest.color]) {
     stage.gateOpen = false;
     return;
   }
@@ -316,7 +340,7 @@ function pickupSpecialItems() {
     const keyBody = { x: stage.key.x - 8, y: stage.key.y - 8, w: 48, h: 48 };
     if (rectsOverlap(body, keyBody)) {
       stage.key.opened = true;
-      inventory.greenKey = true;
+      inventory.keys[stage.key.color] = true;
       points += 5;
       syncHUD();
       setPresence().catch(() => {});
@@ -325,9 +349,9 @@ function pickupSpecialItems() {
 
   if (stage.chest && !stage.chest.opened) {
     const chestBody = { x: stage.chest.x - 8, y: stage.chest.y - 8, w: 56, h: 44 };
-    if (rectsOverlap(body, chestBody) && inventory.greenKey) {
+    if (rectsOverlap(body, chestBody) && inventory.keys[stage.chest.color]) {
       stage.chest.opened = true;
-      inventory.greenChestOpen = true;
+      inventory.chestsOpen[stage.chest.color] = true;
       points += 10;
       syncHUD();
       setPresence().catch(() => {});
@@ -506,9 +530,10 @@ function drawFriends(stage) {
 function drawKey(item, cameraOffsetX) {
   if (!item || item.opened) return;
   const x = item.x - cameraOffsetX;
+  const style = colorStyle(item.color);
   ctx.save();
-  ctx.fillStyle = "#62e6a2";
-  ctx.shadowColor = "rgba(0,0,0,0.25)";
+  ctx.fillStyle = style.fill;
+  ctx.shadowColor = style.glow;
   ctx.shadowBlur = 12;
   ctx.beginPath();
   ctx.arc(x + 16, item.y + 18, 12, 0, Math.PI * 2);
@@ -525,11 +550,14 @@ function drawKey(item, cameraOffsetX) {
 function drawChest(item, cameraOffsetX) {
   if (!item || item.opened) return;
   const x = item.x - cameraOffsetX;
+  const style = colorStyle(item.color);
   ctx.save();
   ctx.fillStyle = "#7a4c1f";
   roundRect(x, item.y, 54, 40, 8, true, "#7a4c1f");
-  ctx.fillStyle = "#62e6a2";
+  ctx.fillStyle = style.fill;
   ctx.fillRect(x + 6, item.y + 16, 42, 6);
+  ctx.fillStyle = style.band;
+  ctx.fillRect(x + 8, item.y + 6, 38, 6);
   ctx.fillStyle = "#fff";
   ctx.font = "20px Arial, sans-serif";
   ctx.textAlign = "center";
@@ -555,11 +583,16 @@ function drawPeople(stage) {
 }
 
 function drawPlayer() {
-  drawFace(player.x - cameraX, player.y, player.w, player.h, me, true);
+  const x = player.x - cameraX;
+  if (PLAYER_SPRITE.complete && PLAYER_SPRITE.naturalWidth > 0) {
+    ctx.drawImage(PLAYER_SPRITE, x, player.y - 1, player.w, player.h + 1);
+  } else {
+    drawFace(x, player.y, player.w, player.h, me, true);
+  }
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 12px Trebuchet MS, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(`${me?.nickname || "Tú"} · ${player.total}`, player.x - cameraX + player.w / 2, player.y - 8);
+  ctx.fillText(`${me?.nickname || "Tú"} · ${player.total}`, x + player.w / 2, player.y - 8);
 }
 
 function drawHUD(stage) {
@@ -575,7 +608,14 @@ function drawHUD(stage) {
   ctx.fillText(`Suma actual: ${player.total}`, 18, 60);
   ctx.fillText(`Puntos comidos: ${points}`, 18, 82);
   ctx.fillText(`Meta del muro: ${stage.target}`, 18, 104);
-  ctx.fillText(`Llave verde: ${inventory.greenKey ? "sí" : "no"}`, 18, 126);
+  const special = stage.key || stage.chest;
+  const specialLabel = stage.key
+    ? `Llave ${colorLabel(stage.key.color)}`
+    : stage.chest
+      ? `Cofre ${colorLabel(stage.chest.color)}`
+      : "Sin llave";
+  const specialReady = special && special.opened ? "sí" : "no";
+  ctx.fillText(`${specialLabel}: ${specialReady}`, 18, 126);
   ctx.restore();
 
   if (gameState === "won") {
