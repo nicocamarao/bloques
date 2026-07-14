@@ -31,6 +31,7 @@ const GAMES = [
   { id: "mundo-fiuma-2", label: "Mundo Fiuma 2", href: resolveHref("../games/mundo-fiuma-2/index.html") },
   { id: "mini-territorio", label: "Mini territorio de amigos", href: resolveHref("../games/mini-territorio/index.html") },
   { id: "mundo-numberblocks", label: "Mundo Numberblocks", href: resolveHref("../games/mundo-numberblocks/index.html") },
+  { id: "mundo-numberblocks-3", label: "Mundo Numberblocks 3", href: resolveHref("../games/mundo-numberblocks-3/index.html") },
   { id: "mundo-numberblocks-2", label: "Mundo Numberblocks 2", href: resolveHref("../games/mundo-numberblocks-2/index.html") },
   { id: "numberblocks-subida", label: "Numberblocks Subida", href: resolveHref("../games/numberblocks-subida/index.html") },
   { id: "memory-numberblocks", label: "Memory de Numberblocks", href: resolveHref("../games/memory-numberblocks/index.html") },

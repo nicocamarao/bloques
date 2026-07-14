@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mundo Numberblocks 3</title>
+    <link rel="stylesheet" href="../../shared/site.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="site-top"></div>
+    <div class="site-shell">
+      <aside id="site-sidebar" class="site-sidebar"></aside>
+      <main id="site-main" class="site-main">
+        <section class="shell">
+          <header class="hud">
+            <div>
+              <p class="eyebrow">Carrera continua</p>
+              <h1>Mundo Numberblocks 3</h1>
+              <p id="nb3-subtitle">La cámara sigue al personaje, los muros se sienten continuos y las sumas avanzan de a 10.</p>
+            </div>
+            <div class="controls">
+              <span id="nb3-count">0 online</span>
+              <span id="nb3-score">Puntos: 0</span>
+              <span id="nb3-stage">Escenario 1 / 20</span>
+              <span id="nb3-selected">Nadie cerca</span>
+            </div>
+          </header>
+
+          <canvas id="game" aria-label="Juego Mundo Numberblocks 3"></canvas>
+
+          <section class="mobile-controls" aria-hidden="true">
+            <button data-action="jump" type="button" aria-label="Arriba">▲</button>
+            <button data-action="left" type="button" aria-label="Izquierda">◀</button>
+            <button data-reset type="button" aria-label="Reiniciar">↺</button>
+            <button data-action="right" type="button" aria-label="Derecha">▶</button>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="../../shared/site.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
