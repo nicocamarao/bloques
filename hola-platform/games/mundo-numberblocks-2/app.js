@@ -26,6 +26,7 @@ const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-2";
 const TOTAL_STAGES = 20;
 const STAGE_TARGET = 10;
+const PLAYER_SCREEN_X = 180;
 const ITEM_COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "lime", "gold"];
 const ITEM_STYLES = {
   red: { fill: "#ff5c7a", band: "#ffd1da", glow: "rgba(255, 92, 122, 0.35)", label: "roja" },
@@ -202,7 +203,7 @@ function resetGame(preserveProgress = false) {
   winFlash = 0;
   startTime = performance.now();
   player = {
-    x: 90,
+    x: PLAYER_SCREEN_X,
     y: 410,
     w: PLAYER_BASE,
     h: PLAYER_H,
@@ -381,12 +382,12 @@ function advanceStageIfNeeded() {
     }
     const nextStage = currentStageData();
     reloadPlayerSprite();
-    player.x = nextStage.baseX + 50;
+    player.x = nextStage.baseX + PLAYER_SCREEN_X;
     player.y = 410;
     player.vx = 0;
     player.vy = 0;
     player.onGround = false;
-    cameraX = nextStage.baseX;
+    cameraX = player.x - PLAYER_SCREEN_X;
     syncHUD();
     updatePresence(true).catch(() => {});
   }
@@ -402,8 +403,7 @@ function update(dt) {
   pickupFriends();
   pickupSpecialItems();
   advanceStageIfNeeded();
-  cameraX += (player.x - cameraX - canvas.width / DPR / 2) * Math.min(1, dt * 3.5);
-  cameraX = clamp(cameraX, currentStageData().baseX - 40, currentStageData().baseX + LEVEL_LENGTH - canvas.width / DPR + 120);
+  cameraX = clamp(player.x - PLAYER_SCREEN_X, currentStageData().baseX - 40, currentStageData().baseX + LEVEL_LENGTH - canvas.width / DPR + 120);
   if (player.y > WORLD_HEIGHT + 200) resetGame();
 }
 
@@ -591,7 +591,7 @@ function drawPeople(stage) {
 }
 
 function drawPlayer() {
-  const x = player.x - cameraX;
+  const x = PLAYER_SCREEN_X;
   if (PLAYER_SPRITE.complete && PLAYER_SPRITE.naturalWidth > 0) {
     ctx.drawImage(PLAYER_SPRITE, x, player.y - 1, player.w, player.h + 1);
   } else {
