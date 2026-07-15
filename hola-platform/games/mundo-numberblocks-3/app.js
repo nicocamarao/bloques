@@ -13,6 +13,9 @@ const countEl = document.getElementById("nb3-count");
 const stageEl = document.getElementById("nb3-stage");
 const selectedEl = document.getElementById("nb3-selected");
 const subtitleEl = document.getElementById("nb3-subtitle");
+const unlockControls = document.getElementById("nb3-unlocks");
+const characterSelect = document.getElementById("nb3-character");
+const petToggle = document.getElementById("nb3-pet");
 
 const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 const WORLD_HEIGHT = 540;
@@ -24,7 +27,7 @@ const PLAYER_H = 49;
 const LEVEL_LENGTH = 1200;
 const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-3";
-const TOTAL_STAGES = 20;
+const TOTAL_STAGES = 30;
 const PLAYER_SCREEN_X = 180;
 const ITEM_COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "lime", "gold"];
 const ITEM_STYLES = {
@@ -48,6 +51,9 @@ const PLAYER_SPRITES = {
 const STORY_SPRITES = {
   jinu: new URL("./jinu.png", import.meta.url).href,
   saja: new URL("./saja-boys.png", import.meta.url).href,
+  demon: new URL("./demon.png", import.meta.url).href,
+  honmoon: new URL("./honmoon.png", import.meta.url).href,
+  mascota: new URL("./mascota.png", import.meta.url).href,
 };
 
 const keys = new Set();
@@ -69,6 +75,9 @@ let points = 0;
 let inventory = { keys: {}, chestsOpen: {} };
 let playerForm = "mira";
 let dialogue = null;
+let petUnlocked = false;
+let newGamePlus = false;
+let finishStartedAt = 0;
 const sprites = {};
 const avatarCache = new Map();
 
@@ -235,11 +244,48 @@ function resetGame(preserveProgress = false) {
     points = 0;
     inventory = { keys: {}, chestsOpen: {} };
     playerForm = "mira";
-    dialogue = null;
+    petUnlocked = false;
     buildWorld();
   }
   enterStage(0);
+  dialogue = preserveProgress ? null : {
+    name: "Misión",
+    message: "Derrota a los demonios y Recupera los Honmoon",
+    startedAt: performance.now(),
+    changed: false,
+  };
   if (preserveProgress && stageData()) stageData().gateOpen = false;
+  syncHUD();
+}
+
+function startUnlockedRun() {
+  if (!newGamePlus && characterSelect) characterSelect.value = playerForm;
+  const selectedForm = characterSelect?.value || playerForm;
+  const petEnabled = petToggle?.checked ?? true;
+  points = 0;
+  inventory = { keys: {}, chestsOpen: {} };
+  buildWorld();
+  world.forEach((stage) => {
+    if (stage.npc) stage.npc.triggered = true;
+  });
+  player = {
+    x: PLAYER_SCREEN_X,
+    y: 410,
+    w: PLAYER_BASE,
+    h: PLAYER_H,
+    vx: 0,
+    vy: 0,
+    total: 0,
+    onGround: true,
+    _jumpLatch: false,
+  };
+  newGamePlus = true;
+  gameState = "playing";
+  dialogue = null;
+  playerForm = selectedForm;
+  petUnlocked = petEnabled;
+  unlockControls.hidden = false;
+  enterStage(0);
   syncHUD();
 }
 
@@ -405,7 +451,7 @@ function updateDialogue(now) {
   if (!dialogue) return;
   const typed = Math.floor((now - dialogue.startedAt) / 34);
   if (typed >= dialogue.message.length && !dialogue.changed) {
-    playerForm = dialogue.form;
+    if (dialogue.form) playerForm = dialogue.form;
     dialogue.changed = true;
   }
   if (typed >= dialogue.message.length && now - dialogue.startedAt > dialogue.message.length * 34 + 1400) dialogue = null;
@@ -416,9 +462,11 @@ function advanceStageIfNeeded() {
   openGateIfReady(stage);
   if (stage.gateOpen && player.x + player.w > stage.gateX + GATE_WIDTH + 8) {
     stage.completed = true;
+    if (stage.target === 200) petUnlocked = true;
     currentStage += 1;
     if (currentStage >= world.length) {
-      gameState = "won";
+      gameState = "finishing";
+      finishStartedAt = performance.now();
       winFlash = 1;
       currentStage = world.length - 1;
       const score = Math.max(0, 8000 - Math.floor((performance.now() - startTime) / 8) + points * 100);
@@ -438,7 +486,7 @@ function advanceStageIfNeeded() {
 
 function update(dt) {
   if (gameState !== "playing") {
-    if (gameState === "won") winFlash = Math.max(0, winFlash - dt * 0.12);
+    if (gameState === "finishing" && performance.now() - finishStartedAt > 2400) startUnlockedRun();
     return;
   }
   updateDialogue(performance.now());
@@ -450,7 +498,10 @@ function update(dt) {
   triggerStory(currentStageData());
   advanceStageIfNeeded();
   cameraX = player.x - PLAYER_SCREEN_X;
-  if (player.y > WORLD_HEIGHT + 200) resetGame();
+  if (player.y > WORLD_HEIGHT + 200) {
+    if (newGamePlus) startUnlockedRun();
+    else resetGame();
+  }
 }
 
 function roundRect(x, y, w, h, r, fill = false, fillStyle = null) {
@@ -550,30 +601,22 @@ function drawFriends(stage) {
 function drawKey(item) {
   if (!item || item.opened) return;
   const x = item.x - cameraX;
-  const style = colorStyle(item.color);
+  const image = sprites.demon;
   ctx.save();
-  ctx.fillStyle = style.fill;
-  ctx.shadowColor = style.glow;
-  ctx.shadowBlur = 12;
-  ctx.beginPath();
-  ctx.arc(x + 16, item.y + 18, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(x + 22, item.y + 14, 22, 8);
-  ctx.fillRect(x + 36, item.y + 10, 8, 16);
+  ctx.shadowColor = colorStyle(item.color).glow;
+  ctx.shadowBlur = 16;
+  if (image?.complete && image.naturalWidth > 0) ctx.drawImage(image, x, item.y - 26, 42, 72);
   ctx.restore();
 }
 
 function drawChest(item) {
   if (!item || item.opened) return;
   const x = item.x - cameraX;
-  const style = colorStyle(item.color);
+  const image = sprites.honmoon;
   ctx.save();
-  ctx.fillStyle = "#7a4c1f";
-  roundRect(x, item.y, 54, 40, 8, true, "#7a4c1f");
-  ctx.fillStyle = style.fill;
-  ctx.fillRect(x + 6, item.y + 16, 42, 6);
-  ctx.fillStyle = style.band;
-  ctx.fillRect(x + 8, item.y + 6, 38, 6);
+  ctx.shadowColor = colorStyle(item.color).glow;
+  ctx.shadowBlur = 18;
+  if (image?.complete && image.naturalWidth > 0) ctx.drawImage(image, x, item.y - 8, 54, 54);
   ctx.restore();
 }
 
@@ -593,12 +636,17 @@ function drawNpc(stage) {
 
 function drawPlayer() {
   const x = PLAYER_SCREEN_X;
+  const pet = sprites.mascota;
+  if (petUnlocked && pet?.complete && pet.naturalWidth > 0) {
+    ctx.drawImage(pet, x - 12, player.y + 25, 50, 37);
+  }
   const sprite = sprites[playerForm];
   if (sprite?.complete && sprite.naturalWidth > 0) {
     const ratio = sprite.naturalWidth / sprite.naturalHeight;
     const h = playerForm === "mira" ? player.h + 1 : player.h + 17;
     const w = Math.max(player.w, h * ratio);
-    ctx.drawImage(sprite, x + (player.w - w) / 2, player.y - (h - player.h), w, h);
+    const rideOffset = petUnlocked ? 18 : 0;
+    ctx.drawImage(sprite, x + (player.w - w) / 2, player.y - (h - player.h) - rideOffset, w, h);
   } else {
     const fallback = avatarImage(me?.photoDataUrl || avatarFallback(me?.nickname || "Tú"));
     if (fallback && fallback.complete && fallback.naturalWidth > 0) {
@@ -649,8 +697,8 @@ function drawHUD(stage) {
   const stageKeys = stage.keys || (stage.key ? [stage.key] : []);
   const stageChests = stage.chests || (stage.chest ? [stage.chest] : []);
   const specialLabel = stageChests.length
-    ? `Cofres: ${stageChests.filter((chest) => chest.opened).length}/${stageChests.length} abiertos`
-    : `Llave: ${stageKeys[0]?.opened ? "conseguida" : "pendiente"}`;
+    ? `Honmoon: ${stageChests.filter((chest) => chest.opened).length}/${stageChests.length} recuperados`
+    : `Demonio: ${stageKeys[0]?.opened ? "derrotado" : "pendiente"}`;
   ctx.fillText(specialLabel, 18, 126);
   ctx.restore();
 }
@@ -679,7 +727,21 @@ function drawDialogue() {
   ctx.fillText(dialogue.name, 58, h - 124);
   ctx.fillStyle = "#fff";
   ctx.font = "600 20px monospace";
-  ctx.fillText(text, 58, h - 84);
+  const words = text.split(" ");
+  let line = "";
+  let lineY = h - 88;
+  const maxWidth = w - 116;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(candidate).width > maxWidth) {
+      ctx.fillText(line, 58, lineY);
+      line = word;
+      lineY += 25;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) ctx.fillText(line, 58, lineY);
   ctx.restore();
 }
 
@@ -696,17 +758,18 @@ function render() {
   drawPlayer();
   drawHUD(stage);
   drawDialogue();
-  if (gameState === "won") {
+  if (gameState === "finishing") {
+    const w = canvas.width / DPR;
     ctx.save();
-    ctx.globalAlpha = 0.88 + Math.sin(performance.now() * 0.008) * 0.08;
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    roundRect(canvas.width / DPR / 2 - 170, 54, 340, 92, 20, true, "rgba(0,0,0,0.45)");
-    ctx.fillStyle = "#fff";
-    ctx.font = "800 30px Trebuchet MS, sans-serif";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.58)";
+    ctx.fillRect(0, 0, w, canvas.height / DPR);
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "900 72px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("FIN", canvas.width / DPR / 2, 96);
-    ctx.font = "600 16px Trebuchet MS, sans-serif";
-    ctx.fillText("Llegaste al muro 200.", canvas.width / DPR / 2, 124);
+    ctx.fillText("FIN", w / 2, 230);
+    ctx.fillStyle = "#fff";
+    ctx.font = "700 18px Trebuchet MS, sans-serif";
+    ctx.fillText("Muro 300 superado", w / 2, 266);
     ctx.restore();
   }
 }
@@ -776,6 +839,14 @@ document.querySelectorAll("[data-action], [data-reset]").forEach((button) => {
   button.addEventListener("pointerup", up);
   button.addEventListener("pointerleave", up);
   button.addEventListener("pointercancel", up);
+});
+
+characterSelect?.addEventListener("change", () => {
+  if (newGamePlus && PLAYER_SPRITES[characterSelect.value]) playerForm = characterSelect.value;
+});
+
+petToggle?.addEventListener("change", () => {
+  if (newGamePlus) petUnlocked = petToggle.checked;
 });
 
 canvas.addEventListener("pointerdown", (event) => {

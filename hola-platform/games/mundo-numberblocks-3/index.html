@@ -17,17 +17,33 @@
             <div>
               <p class="eyebrow">Carrera continua</p>
               <h1>Mundo Numberblocks 3</h1>
-              <p id="nb3-subtitle">Las metas suben de a 10: encontrá llaves, abrí cofres y volvé por el borde izquierdo cuando quieras.</p>
+              <p id="nb3-subtitle">Las metas suben de a 10: derrotá demonios, recuperá Honmoon y llegá al muro 300.</p>
             </div>
             <div class="controls">
               <span id="nb3-count">0 online</span>
               <span id="nb3-score">Puntos: 0</span>
-              <span id="nb3-stage">Escenario 1 / 20</span>
+              <span id="nb3-stage">Escenario 1 / 30</span>
               <span id="nb3-selected">Nadie cerca</span>
             </div>
           </header>
 
           <canvas id="game" aria-label="Juego Mundo Numberblocks 3"></canvas>
+
+          <section id="nb3-unlocks" class="unlock-controls" hidden>
+            <strong>Personajes desbloqueados</strong>
+            <label>
+              Personaje
+              <select id="nb3-character">
+                <option value="mira">Mira</option>
+                <option value="zoey">Zoey</option>
+                <option value="rumi">Rumi</option>
+              </select>
+            </label>
+            <label class="pet-toggle">
+              <input id="nb3-pet" type="checkbox" checked>
+              Gato mascota
+            </label>
+          </section>
 
           <section class="mobile-controls" aria-hidden="true">
             <button data-action="jump" type="button" aria-label="Arriba">▲</button>
