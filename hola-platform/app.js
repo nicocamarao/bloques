@@ -5,6 +5,17 @@ const main = document.getElementById("site-main");
 
 const games = [
   {
+    id: "huntrix-modo-historia",
+    title: "Huntrix Modo Historia",
+    href: "./games/huntrix-modo-historia/index.html",
+    description: "Una campaña de 20 escenas con diálogos, decisiones y misiones inspiradas en HUNTR/X.",
+    kind: "symbol",
+    symbol: "✦",
+    accent: "aventura",
+    category: "Aventura",
+    preview: { kind: "emoji", value: "🎤" },
+  },
+  {
     id: "mini-territorio",
     title: "Mini territorio de amigos",
     href: "./games/mini-territorio/index.html",
