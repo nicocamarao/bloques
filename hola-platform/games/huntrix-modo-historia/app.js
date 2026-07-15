@@ -147,15 +147,15 @@ function makeStage(index) {
   const baseX = index * LEVEL_LENGTH;
   const groundY = 458;
   const gateX = baseX + LEVEL_LENGTH - 150;
-  const high = 255 + (index % 3) * 24;
+  const high = 340;
   const platforms = [
     { x: baseX + 330, y: high, w: 154, h: 18 },
-    { x: baseX + 760, y: high + 112, w: 164, h: 18 },
+    { x: baseX + 760, y: high + 30, w: 164, h: 18 },
   ];
   const itemLayout = [
     { x: baseX + 390, y: high - 44 },
     { x: baseX + 600, y: groundY - 44 },
-    { x: baseX + 815, y: high + 68 },
+    { x: baseX + 815, y: high - 14 },
   ];
   const stage = {
     index,
@@ -886,12 +886,7 @@ canvas.addEventListener("pointerdown", (event) => {
 async function bootstrap() {
   me = await bootstrapProfile();
   loadSprites();
-  const spawn = spawnFor(me);
   resetGame();
-  player.x = spawn.x;
-  player.y = stageData().groundY - player.h - 1;
-  player.onGround = true;
-  cameraX = player.x - PLAYER_SCREEN_X;
   bootPeople();
   onProfileChange((profile) => {
     me = profile;
