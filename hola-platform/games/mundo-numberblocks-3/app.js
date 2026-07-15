@@ -25,7 +25,6 @@ const LEVEL_LENGTH = 1200;
 const GATE_WIDTH = 26;
 const WORLD_ID = "mundo-numberblocks-3";
 const TOTAL_STAGES = 20;
-const TARGET = 10;
 const PLAYER_SCREEN_X = 180;
 const ITEM_COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "lime", "gold"];
 const ITEM_STYLES = {
@@ -41,6 +40,15 @@ const ITEM_STYLES = {
   gold: { fill: "#f59f00", band: "#ffe8a3", glow: "rgba(245, 159, 0, 0.35)", label: "dorada" },
 };
 const SPRITE_SRC = new URL("./character.png", import.meta.url).href;
+const PLAYER_SPRITES = {
+  mira: SPRITE_SRC,
+  zoey: new URL("./zoey.png", import.meta.url).href,
+  rumi: new URL("./rumi.png", import.meta.url).href,
+};
+const STORY_SPRITES = {
+  jinu: new URL("./jinu.png", import.meta.url).href,
+  saja: new URL("./saja-boys.png", import.meta.url).href,
+};
 
 const keys = new Set();
 const mobile = { left: false, right: false, jump: false };
@@ -59,7 +67,9 @@ let heartbeatTimer = null;
 let selectedSessionId = "";
 let points = 0;
 let inventory = { keys: {}, chestsOpen: {} };
-let sprite = new Image();
+let playerForm = "mira";
+let dialogue = null;
+const sprites = {};
 const avatarCache = new Map();
 
 function clamp(value, min, max) {
@@ -90,10 +100,13 @@ function avatarImage(src) {
   return avatarCache.get(src);
 }
 
-function loadSprite() {
-  sprite = new Image();
-  sprite.decoding = "async";
-  sprite.src = SPRITE_SRC;
+function loadSprites() {
+  Object.entries({ ...PLAYER_SPRITES, ...STORY_SPRITES }).forEach(([name, src]) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = src;
+    sprites[name] = image;
+  });
 }
 
 function colorStyle(color) {
@@ -137,19 +150,35 @@ function makeStage(index) {
   const color = stageColor(index);
   const stage = {
     index,
-    target: TARGET,
+    target: (index + 1) * 10,
     baseX,
     groundY,
     gateX,
     platforms,
     gateOpen: false,
+    completed: false,
     friends: [
       { x: friendLayout[0].x, y: friendLayout[0].y, w: 32, h: 40, value: a, collected: false },
       { x: friendLayout[1].x, y: friendLayout[1].y, w: 32, h: 40, value: b, collected: false },
     ],
   };
-  if (index % 2 === 0) stage.key = { color, x: baseX + 180, y: groundY - 40, opened: false };
-  if (index % 2 === 1) stage.chest = { color, x: baseX + 260, y: 408, opened: false };
+  if (index >= 9) {
+    const secondColor = ITEM_COLORS[(ITEM_COLORS.indexOf(color) + 1) % ITEM_COLORS.length];
+    stage.keys = [
+      { color, x: baseX + 230, y: groundY - 40, opened: false },
+      { color: secondColor, x: baseX + 500, y: 246, opened: false },
+    ];
+    stage.chests = [
+      { color, x: baseX + 690, y: 408, opened: false },
+      { color: secondColor, x: baseX + 930, y: 408, opened: false },
+    ];
+  } else if (index % 2 === 0) {
+    stage.key = { color, x: baseX + 180, y: groundY - 40, opened: false };
+  } else {
+    stage.chest = { color, x: baseX + 260, y: 408, opened: false };
+  }
+  if (index === 4) stage.npc = { name: "Jinu", sprite: "jinu", x: baseX + 720, y: 276, w: 92, h: 148, message: "Hola Mira, ahora puedes jugar como Zoey.", form: "zoey", triggered: false };
+  if (index === 9) stage.npc = { name: "Saja Boys", sprite: "saja", x: baseX + 690, y: 268, w: 150, h: 128, message: "Hola Zoey, ahora puedes jugar como Rumi!", form: "rumi", triggered: false };
   return stage;
 }
 
@@ -158,11 +187,13 @@ function buildWorld() {
   for (let i = 0; i < TOTAL_STAGES; i += 1) world.push(makeStage(i));
 }
 
-function enterStage(index) {
+function enterStage(index, entrySide = "left") {
   currentStage = clamp(index, 0, Math.max(0, world.length - 1));
   const stage = currentStageData();
   const groundY = stage?.groundY ?? 458;
-  player.x = stage.baseX + PLAYER_SCREEN_X;
+  player.x = entrySide === "right"
+    ? stage.gateX - player.w - 32
+    : stage.baseX + PLAYER_SCREEN_X;
   player.y = groundY - player.h - 1;
   player.vx = 0;
   player.vy = 0;
@@ -196,13 +227,15 @@ function resetGame(preserveProgress = false) {
     h: PLAYER_H,
     vx: 0,
     vy: 0,
-    total: 1,
+    total: 0,
     onGround: true,
     _jumpLatch: false,
   };
   if (!preserveProgress) {
     points = 0;
     inventory = { keys: {}, chestsOpen: {} };
+    playerForm = "mira";
+    dialogue = null;
     buildWorld();
   }
   enterStage(0);
@@ -215,11 +248,16 @@ function currentStageData() {
 }
 
 function isGateSatisfied(stage) {
-  return player.total >= stage.target;
+  return player.total === stage.target;
 }
 
 function openGateIfReady(stage) {
-  if (stage.chest && !inventory.chestsOpen[stage.chest.color]) {
+  if (stage.completed) {
+    stage.gateOpen = true;
+    return;
+  }
+  const requiredChests = stage.chests || (stage.chest ? [stage.chest] : []);
+  if (requiredChests.some((chest) => !chest.opened)) {
     stage.gateOpen = false;
     return;
   }
@@ -329,30 +367,55 @@ function pickupFriends() {
 function pickupSpecialItems() {
   const stage = currentStageData();
   const body = { x: player.x - 2, y: player.y - 4, w: player.w + 4, h: player.h + 8 };
-  if (stage.key && !stage.key.opened) {
-    const keyBody = { x: stage.key.x - 8, y: stage.key.y - 8, w: 48, h: 48 };
+  const keysInStage = stage.keys || (stage.key ? [stage.key] : []);
+  const chestsInStage = stage.chests || (stage.chest ? [stage.chest] : []);
+  for (const key of keysInStage) {
+    if (key.opened) continue;
+    const keyBody = { x: key.x - 8, y: key.y - 8, w: 48, h: 48 };
     if (rectsOverlap(body, keyBody)) {
-      stage.key.opened = true;
-      inventory.keys[stage.key.color] = true;
+      key.opened = true;
+      inventory.keys[key.color] = true;
       points += 5;
       syncHUD();
     }
   }
-  if (stage.chest && !stage.chest.opened) {
-    const chestBody = { x: stage.chest.x - 8, y: stage.chest.y - 8, w: 56, h: 44 };
-    if (rectsOverlap(body, chestBody) && inventory.keys[stage.chest.color]) {
-      stage.chest.opened = true;
-      inventory.chestsOpen[stage.chest.color] = true;
+  for (const chest of chestsInStage) {
+    if (chest.opened) continue;
+    const chestBody = { x: chest.x - 8, y: chest.y - 8, w: 56, h: 44 };
+    if (rectsOverlap(body, chestBody) && inventory.keys[chest.color]) {
+      chest.opened = true;
+      inventory.chestsOpen[chest.color] = true;
       points += 10;
       syncHUD();
     }
   }
 }
 
+function triggerStory(stage) {
+  const npc = stage.npc;
+  if (!npc || npc.triggered || dialogue) return;
+  const playerBody = { x: player.x, y: player.y, w: player.w, h: player.h };
+  const npcBody = { x: npc.x - 30, y: npc.y - 20, w: npc.w + 60, h: npc.h + 40 };
+  if (!rectsOverlap(playerBody, npcBody)) return;
+  npc.triggered = true;
+  dialogue = { ...npc, startedAt: performance.now(), changed: false };
+}
+
+function updateDialogue(now) {
+  if (!dialogue) return;
+  const typed = Math.floor((now - dialogue.startedAt) / 34);
+  if (typed >= dialogue.message.length && !dialogue.changed) {
+    playerForm = dialogue.form;
+    dialogue.changed = true;
+  }
+  if (typed >= dialogue.message.length && now - dialogue.startedAt > dialogue.message.length * 34 + 1400) dialogue = null;
+}
+
 function advanceStageIfNeeded() {
   const stage = currentStageData();
   openGateIfReady(stage);
   if (stage.gateOpen && player.x + player.w > stage.gateX + GATE_WIDTH + 8) {
+    stage.completed = true;
     currentStage += 1;
     if (currentStage >= world.length) {
       gameState = "won";
@@ -364,6 +427,12 @@ function advanceStageIfNeeded() {
     }
     enterStage(currentStage);
     syncHUD();
+    return;
+  }
+  if (currentStage > 0 && player.x + player.w < stage.baseX) {
+    currentStage -= 1;
+    enterStage(currentStage, "right");
+    syncHUD();
   }
 }
 
@@ -372,10 +441,13 @@ function update(dt) {
     if (gameState === "won") winFlash = Math.max(0, winFlash - dt * 0.12);
     return;
   }
+  updateDialogue(performance.now());
+  if (dialogue) return;
   handleMovement(dt);
   moveAndCollide(dt);
   pickupFriends();
   pickupSpecialItems();
+  triggerStory(currentStageData());
   advanceStageIfNeeded();
   cameraX = player.x - PLAYER_SCREEN_X;
   if (player.y > WORLD_HEIGHT + 200) resetGame();
@@ -505,10 +577,28 @@ function drawChest(item) {
   ctx.restore();
 }
 
+function drawNpc(stage) {
+  const npc = stage.npc;
+  if (!npc || npc.triggered) return;
+  const image = sprites[npc.sprite];
+  const x = npc.x - cameraX;
+  if (image?.complete && image.naturalWidth > 0) {
+    ctx.drawImage(image, x, npc.y, npc.w, npc.h);
+  }
+  ctx.fillStyle = "#fff";
+  ctx.font = "700 14px Trebuchet MS, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(npc.name, x + npc.w / 2, npc.y - 10);
+}
+
 function drawPlayer() {
   const x = PLAYER_SCREEN_X;
-  if (sprite.complete && sprite.naturalWidth > 0) {
-    ctx.drawImage(sprite, x, player.y - 1, player.w, player.h + 1);
+  const sprite = sprites[playerForm];
+  if (sprite?.complete && sprite.naturalWidth > 0) {
+    const ratio = sprite.naturalWidth / sprite.naturalHeight;
+    const h = playerForm === "mira" ? player.h + 1 : player.h + 17;
+    const w = Math.max(player.w, h * ratio);
+    ctx.drawImage(sprite, x + (player.w - w) / 2, player.y - (h - player.h), w, h);
   } else {
     const fallback = avatarImage(me?.photoDataUrl || avatarFallback(me?.nickname || "Tú"));
     if (fallback && fallback.complete && fallback.naturalWidth > 0) {
@@ -547,7 +637,7 @@ function drawHUD(stage) {
   const w = canvas.width / DPR;
   ctx.save();
   ctx.fillStyle = "rgba(8, 12, 20, 0.55)";
-  roundRect(14, 14, 300, 118, 18, true, "rgba(8, 12, 20, 0.55)");
+  roundRect(14, 14, 340, 142, 18, true, "rgba(8, 12, 20, 0.55)");
   ctx.fillStyle = "#f5f7ff";
   ctx.font = "700 18px Trebuchet MS, sans-serif";
   ctx.textAlign = "left";
@@ -556,9 +646,40 @@ function drawHUD(stage) {
   ctx.fillText(`Suma actual: ${player.total}`, 18, 60);
   ctx.fillText(`Puntos comidos: ${points}`, 18, 82);
   ctx.fillText(`Meta del muro: ${stage.target}`, 18, 104);
-  const specialLabel = stage.key ? `Llave ${colorStyle(stage.key.color).label}` : stage.chest ? `Cofre ${colorStyle(stage.chest.color).label}` : "Sin llave";
-  const specialReady = (stage.key || stage.chest) ? "sí" : "no";
-  ctx.fillText(`${specialLabel}: ${specialReady}`, 18, 126);
+  const stageKeys = stage.keys || (stage.key ? [stage.key] : []);
+  const stageChests = stage.chests || (stage.chest ? [stage.chest] : []);
+  const specialLabel = stageChests.length
+    ? `Cofres: ${stageChests.filter((chest) => chest.opened).length}/${stageChests.length} abiertos`
+    : `Llave: ${stageKeys[0]?.opened ? "conseguida" : "pendiente"}`;
+  ctx.fillText(specialLabel, 18, 126);
+  ctx.restore();
+}
+
+function drawDialogue() {
+  if (!dialogue) return;
+  const now = performance.now();
+  const typed = Math.floor((now - dialogue.startedAt) / 34);
+  const text = dialogue.message.slice(0, typed);
+  const w = canvas.width / DPR;
+  const h = canvas.height / DPR;
+  ctx.save();
+  ctx.fillStyle = "rgba(2, 4, 12, 0.68)";
+  ctx.fillRect(0, 0, w, h);
+  const image = sprites[dialogue.sprite];
+  if (image?.complete && image.naturalWidth > 0) {
+    ctx.drawImage(image, w - 210, 40, 150, 190);
+  }
+  roundRect(38, h - 156, w - 76, 112, 18, true, "rgba(12, 18, 36, 0.96)");
+  ctx.strokeStyle = "rgba(255, 209, 102, 0.8)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "800 18px Trebuchet MS, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(dialogue.name, 58, h - 124);
+  ctx.fillStyle = "#fff";
+  ctx.font = "600 20px monospace";
+  ctx.fillText(text, 58, h - 84);
   ctx.restore();
 }
 
@@ -568,11 +689,13 @@ function render() {
   drawPlatforms(stage);
   drawGate(stage);
   drawFriends(stage);
-  drawKey(stage.key);
-  drawChest(stage.chest);
+  (stage.keys || (stage.key ? [stage.key] : [])).forEach(drawKey);
+  (stage.chests || (stage.chest ? [stage.chest] : [])).forEach(drawChest);
+  drawNpc(stage);
   drawPeople(stage);
   drawPlayer();
   drawHUD(stage);
+  drawDialogue();
   if (gameState === "won") {
     ctx.save();
     ctx.globalAlpha = 0.88 + Math.sin(performance.now() * 0.008) * 0.08;
@@ -581,9 +704,9 @@ function render() {
     ctx.fillStyle = "#fff";
     ctx.font = "800 30px Trebuchet MS, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("¡Mundo Numberblocks 3 completado!", canvas.width / DPR / 2, 96);
+    ctx.fillText("FIN", canvas.width / DPR / 2, 96);
     ctx.font = "600 16px Trebuchet MS, sans-serif";
-    ctx.fillText("Llegaste al final con la suma continua.", canvas.width / DPR / 2, 124);
+    ctx.fillText("Llegaste al muro 200.", canvas.width / DPR / 2, 124);
     ctx.restore();
   }
 }
@@ -663,7 +786,7 @@ canvas.addEventListener("pointerdown", (event) => {
 
 async function bootstrap() {
   me = await bootstrapProfile();
-  loadSprite();
+  loadSprites();
   const spawn = spawnFor(me);
   resetGame();
   player.x = spawn.x;
