@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17130f"><title>Verificador King Jr.</title>
+<link rel="stylesheet" href="style.css?v=1">
+<script src="vendor/jsQR.js" defer></script><script src="registry.js?v=1" defer></script><script src="app.js?v=1" defer></script>
+</head>
+<body><main>
+<header><a href="https://www.burgerking.com.uy/" target="_blank" rel="noopener noreferrer"><img src="../kingjr/assets/burger-king.svg" alt="Burger King Uruguay" width="60" height="60"></a><span>KING JR. / VERIFICADOR</span></header>
+<h1>Escaneá el premio.</h1><p class="intro">Comprobá el QR y registrá su primera lectura en este navegador.</p>
+<div class="camera"><video id="camera" autoplay playsinline muted hidden></video><div id="cameraPlaceholder">Apuntá al QR de la colección King Jr.</div><div id="guide" hidden aria-hidden="true"></div></div>
+<div class="controls"><button id="start" class="primary">Activar cámara</button><button id="stop" hidden>Apagar cámara</button></div>
+<p id="cameraStatus" role="status"></p>
+<section id="result" class="result" hidden role="status" aria-live="polite" aria-atomic="true"><span id="resultIcon" aria-hidden="true"></span><div><h2 id="resultTitle"></h2><p id="resultDetail"></p></div></section>
+<button id="next" class="primary" hidden>Escanear otro QR</button>
+<details><summary>Ingresar el contenido del QR</summary><form id="manual"><label for="payload">Contenido completo</label><input id="payload" name="payload" placeholder="PREMIO:KINGJR:…" autocomplete="off" spellcheck="false" required><button type="submit">Verificar y registrar</button></form></details>
+<aside><strong id="count">Consultando lecturas guardadas…</strong><p>El historial se guarda en este navegador. Borrar sus datos o usar otro dispositivo elimina esa protección contra lecturas repetidas. Se valida el formato del QR; no su emisión ni su estado de canje.</p></aside>
+<footer><a href="../kingjr/">Volver al juego ↗</a><span>Creado por <a href="https://www.linkedin.com/in/rodrigo-pisurno-cremona-b57702a2/" target="_blank" rel="noopener noreferrer">Rodrigo Pisurno</a></span></footer>
+</main></body></html>
