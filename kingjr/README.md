@@ -11,7 +11,7 @@ Static GitHub Pages game. Open `index.html` over HTTPS and grant camera access.
 | Subway wordmark, SUB or WAY | Subterráneo Fernández |
 | Domino’s tile | Don Minio |
 
-The first positive detection shows the matching creature. Two consecutive spatially consistent detections enable capture. Switching brands selects the new creature directly, including after a capture; encounters are no longer random. The original animated artwork is retained (three image assets, four collection entries; Subway and McDonald’s share the original burger image). These are animated sprites, not 3D meshes.
+The first positive detection shows the matching creature. Two consecutive spatially consistent detections enable capture. Switching brands selects the new creature directly, including after a capture; encounters are no longer random. Four separate animated images are used. Subway keeps the original three-eyed burger; McDonald’s uses the user-supplied four-eyed McMonstruo, extracted onto transparency with the built-in image tool. These are animated sprites, not 3D meshes.
 
 ## Recognition
 
@@ -37,7 +37,7 @@ node tests/browser.cjs
 
 `CHROMIUM_PATH` optionally selects an installed Chromium executable. The browser check starts an ephemeral localhost server and uses synthetic UI detections, not the physical camera. Detector checks use rasterized logos with recoloring, inverse contrast, rotation, blur and crops, plus unrelated letters/words and a blank frame. Browser checks cover Worker startup, demo isolation, immediate brand-specific appearance, capture confirmation, brand changes, all four captures and persistent QR reload. Physical phones and real packaging photographs have not been validated; synthetic checks are not a real-world accuracy benchmark.
 
-Publish this independent folder at `/kingjr/` within `nicocamarao/bloques` on GitHub Pages. The application, Worker and target database use matching `brands-4` cache versions.
+Publish this independent folder at `/kingjr/` within `nicocamarao/bloques` on GitHub Pages. The application uses `brands-5`; the unchanged Worker and target database use `brands-4`.
 
 ## Reference credits
 
@@ -46,4 +46,6 @@ Publish this independent folder at `/kingjr/` within `nicocamarao/bloques` on Gi
 - McDonald’s and KFC vector references: [Simple Icons v13](https://github.com/simple-icons/simple-icons/tree/13.0.0/icons), CC0 project; brand trademarks belong to their owners.
 - Subway: [Subway 2016 wordmark](https://commons.wikimedia.org/wiki/File:Subway_2016_logo.svg).
 - Domino’s: [Domino’s pizza tile](https://commons.wikimedia.org/wiki/File:Domino%27s_pizza_logo.svg).
-- Existing monster artwork is unchanged. Independent prototype.
+- Original Subway, KFC and Domino’s artwork is unchanged. McMonstruo uses the new supplied reference. Independent prototype.
+
+McMonstruo asset: `assets/mcmonstruo.png`. Built-in image tool, background-extraction edit. Prompt: remove only the background, floor, scanner brackets and border; preserve the four eyes, bun, teeth, tongue, ingredients, pose and colors; transparent alpha, no text or logos.

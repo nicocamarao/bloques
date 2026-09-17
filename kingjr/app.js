@@ -5,7 +5,7 @@ const species={
  kfc:{name:'Satán Sanders',brand:'KFC',number:'01',image:'assets/chicken.webp',description:'Crujiente por fuera. Caótico por dentro.'},
  dominos:{name:'Don Minio',brand:'Domino’s',number:'02',image:'assets/pizza.webp',description:'Un solo ojo. Demasiados colmillos.'},
  subway:{name:'Subterráneo Fernández',brand:'Subway',number:'03',image:'assets/burger.webp',description:'Tres ojos vigilan. Una lengua acecha.'},
- mcdonalds:{name:'McMonstruo',brand:'McDonald’s',number:'04',image:'assets/burger.webp',description:'La criatura de hamburguesa llega a los arcos dorados.'}
+ mcdonalds:{name:'McMonstruo',brand:'McDonald’s',number:'04',image:'assets/mcmonstruo.png',description:'La criatura de hamburguesa llega a los arcos dorados.'}
 };
 let gameState={v:1,mask:0},collection={},canSave=true,storageError='';
 try{gameState=KingGame.read()}catch(e){canSave=false;storageError=e.message}
