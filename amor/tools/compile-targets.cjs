@@ -3,6 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),sharp=require('sharp');
 const CV=require('../cv-core.js'),J=require('../vendor/jsfeat.min.js');
 const dir=path.join(__dirname,'../targets');
 const corners={rose:[[30,68],[197,30],[245,151],[74,196]],dreams:[[37,69],[191,35],[242,145],[83,188]],thin:[[43,73],[191,36],[240,148],[76,193]],longlove:[[40,76],[193,36],[245,148],[82,194]],fruit:[[46,74],[185,40],[233,135],[86,178]]};
+corners.strong=[[0,0],[229,0],[229,172],[0,172]];corners.xxl=[[0,0],[455,0],[455,346],[0,346]];corners['dreams-local']=[[0,0],[230,0],[230,172],[0,172]];
 function rectify(data,w,h,quad){
  const width=320,height=240,H=new J.matrix_t(3,3,J.F32_t|J.C1_t);
  new J.motion_model.homography2d().run([{x:0,y:0},{x:width,y:0},{x:width,y:height},{x:0,y:height}],quad.map(([x,y])=>({x,y})),H,4);
@@ -15,19 +16,25 @@ function rectify(data,w,h,quad){
 }
 (async()=>{
  const targets=[];
- for(const [id,quad] of Object.entries(corners)){
-  const {data,info}=await sharp(path.join(dir,id+'.jpg')).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ for(const [key,quad] of Object.entries(corners)){
+  const id=key==='dreams-local'?'dreams':key;
+  const {data,info}=await sharp(path.join(dir,key+'.jpg')).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   const flat=rectify(data,info.width,info.height,quad);
-  await sharp(flat.data,{raw:{width:flat.width,height:flat.height,channels:4}}).png().toFile(path.join(dir,id+'-front.png'));
+  await sharp(flat.data,{raw:{width:flat.width,height:flat.height,channels:4}}).png().toFile(path.join(dir,key+'-front.png'));
   // Exclude the identical crown/AMOR wordmark. Keep variety name and descriptor.
-  const crop={left:20,top:84,width:280,height:85};
+  const crop=['strong','xxl','dreams-local'].includes(key)?{left:20,top:84,width:280,height:90}:{left:20,top:84,width:280,height:85};
   const band=await sharp(flat.data,{raw:{width:flat.width,height:flat.height,channels:4}}).extract(crop).raw().toBuffer({resolveWithObject:true});
-  await sharp(band.data,{raw:{width:band.info.width,height:band.info.height,channels:4}}).png().toFile(path.join(dir,id+'-label.png'));
+  await sharp(band.data,{raw:{width:band.info.width,height:band.info.height,channels:4}}).png().toFile(path.join(dir,key+'-label.png'));
   const t=CV.train(band.data,band.info.width,band.info.height,id,'label');t.partial=true;
   const inverse=Buffer.from(band.data);for(let i=0;i<inverse.length;i+=4)for(let c=0;c<3;c++)inverse[i+c]=255-inverse[i+c];
   const ti=CV.train(inverse,band.info.width,band.info.height,id,'label');t.points.push(...ti.points);t.desc.push(...ti.desc);
   if(t.points.length>650){const pts=[],ds=[];for(let i=0;i<650;i++){const j=Math.floor(i*t.points.length/650);pts.push(t.points[j]);ds.push(...t.desc.slice(j*8,j*8+8));}t.points=pts;t.desc=ds;}
   targets.push(t);
+  if(['strong','xxl','dreams-local'].includes(key)){
+   const c={left:Math.round(crop.left*info.width/320),top:Math.round(crop.top*info.height/240),width:Math.round(crop.width*info.width/320),height:Math.round(crop.height*info.height/240)};
+   const native=await sharp(data,{raw:{width:info.width,height:info.height,channels:4}}).extract(c).raw().toBuffer();
+   const nt=CV.train(native,c.width,c.height,id,'native-label');nt.partial=true;targets.push(nt);
+  }
   const polygon=[[crop.left,crop.top],[crop.left+crop.width,crop.top],[crop.left+crop.width,crop.top+crop.height],[crop.left,crop.top+crop.height]].map(([x,y])=>CV.project(flat.H,x,y));
   const bounds=quad.map(([x,y])=>({x,y}));
   const left=Math.floor(Math.min(...bounds.map(p=>p.x))),top=Math.floor(Math.min(...bounds.map(p=>p.y)));

@@ -1,0 +1,8 @@
+{
+  "tool": "built-in image_gen",
+  "mode": "generate",
+  "prompts": {
+    "strong": "Use case: stylized-concept. Game sprite for adult Amor packaging scanning collection. Create one delightful highly detailed 3D fantasy monster, full body centered with generous margins, genuinely transparent alpha background, no text or logos, no scenery. Bruno Blindado: squat powerful golden amber armored creature, overlapping rounded protective plates, chunky arms, three expressive eyes and small ivory horns, warm mischievous smile. Inspired by golden Strong Extra Fuerte packaging. Polished tactile cinematic collectible creature, soft studio lighting, no human or sexual anatomy.",
+    "xxl": "Use case: stylized-concept. Game sprite for adult Amor packaging scanning collection. Create one delightful highly detailed 3D fantasy monster, full body centered with generous margins, genuinely transparent alpha background, no text or logos, no scenery. Maximiliano XXL: towering friendly orange furry giant with huge broad feet and long rounded arms, two small curved horns, two wide curious eyes and a goofy fanged smile. Inspired by orange XXL Extra Grande packaging. Distinct tall silhouette. Polished tactile cinematic collectible creature, soft studio lighting, no human or sexual anatomy."
+  }
+}

@@ -11,6 +11,8 @@ Independent responsive AR-style collectible experience at `/bloques/amor/`, with
 | Wild Dreams / Corrugado | Rulo Salvaje | `assets/dreams.webp` |
 | Long Love | Don Sinprisa | `assets/longlove.webp` |
 | Fruit / Color y Aroma | Tutti Frutti | `assets/fruit.webp` |
+| Strong / Extra Fuerte | Bruno Blindado | `assets/strong.webp` |
+| XXL / Extra Grande | Maximiliano XXL | `assets/xxl.webp` |
 
 The five varieties are verified in [Amor's Uruguay catalog](https://preservativosamor.com/). No public sales ranking was found, so they are a catalog selection, not a substantiated top-five sales ranking. The downloaded reference photographs show the packaging versions supported by this detector; other package revisions may need additional training images.
 
@@ -24,13 +26,13 @@ Use a well-lit, mostly flat package front without strong glare. References are l
 
 ## Independent persistence and QR
 
-`amor_hunt_v1` is a cookie scoped to the Amor game path. Five species use mask `31`. Completion creates one persistent `PREMIO:AMOR:<UUID v4>` payload and QR GIF. Existing King Jr. cookies and assets are unchanged. The exact QR image is reused on reload, and Web Locks serialize cookie writes.
+`amor_hunt_v1` is a cookie scoped to the Amor game path. Seven species use mask `127`. Version 1 collections migrate to version 2, preserving any QR earned with the original five species. Completion creates one persistent `PREMIO:AMOR:<UUID v4>` payload and QR GIF. Existing King Jr. cookies and assets are unchanged. The exact QR image is reused on reload, and Web Locks serialize cookie writes.
 
 The Amor verifier accepts only AMOR codes, rejects KINGJR codes, and stores first-read timestamps under `amor_verifier_read_v1` in localStorage. A duplicate has no green tick. These are local format and duplicate checks, not server-side issuance/redemption authentication. Clearing browser data or changing browser/device bypasses local history.
 
 ## Design and artwork
 
-Lavender, coral and mint; serif editorial headlines; asymmetrical hero; five-creature gallery; independent mobile/scanner styles. Amor logos link to the Uruguay catalog. Rodrigo Pisurno's LinkedIn appears in the hero, footer and collection, as well as the verifier.
+Lavender, coral and mint; serif editorial headlines; asymmetrical hero; seven-creature gallery; independent mobile/scanner styles. Amor logos link to the Uruguay catalog. Rodrigo Pisurno's LinkedIn appears in the hero, footer and collection, as well as the verifier.
 
 Five artwork images were made with the built-in `image_gen` tool. Original transparent PNGs and deployment-optimized WebPs are in `assets/`. The exact final prompt for each is in [generation-prompts.json](assets/generation-prompts.json). No sexual anatomy or activity is depicted. Brand/product imagery comes from the catalog; this project does not make medical performance claims.
 
@@ -45,7 +47,7 @@ node tests/browser.cjs
 node ../verificadoramor/tests/browser.cjs
 ```
 
-Detector fixtures cover all five original catalog images, rectified fronts, grayscale, rotation and visible label crops. Negative fixtures include the common Amor logo, a blank image and every package with the variety obscured. Browser checks cover real Worker image detection, the matching five creatures, immediate appearance/capture confirmation, demo isolation, completion, persistent AMOR QR, no King Jr. cookie creation, attribution links and mobile layout. Verifier checks cover actual QR decoding, duplicates after reload, case normalization, concurrent tabs, invalid/foreign prefixes and storage failures.
+Detector fixtures cover all five original catalog images, rectified fronts, grayscale, rotation and visible label crops. Negative fixtures include the common Amor logo, a blank image and every package with the variety obscured. Browser checks cover real Worker image detection, the matching seven creatures, immediate appearance/capture confirmation, demo isolation, completion, persistent AMOR QR, no King Jr. cookie creation, attribution links and mobile layout. Verifier checks cover actual QR decoding, duplicates after reload, case normalization, concurrent tabs, invalid/foreign prefixes and storage failures.
 
 ## Credits
 
@@ -54,3 +56,9 @@ Detector fixtures cover all five original catalog images, rectified fronts, gray
 - QR generator: Kazuhiko Arase, license included in `vendor/qrcode.js`.
 - jsQR in the verifier: bundled `vendor/LICENSE-jsQR`.
 - Creator attribution: [Rodrigo Pisurno](https://www.linkedin.com/in/rodrigo-pisurno-cremona-b57702a2/).
+
+## September 17 additions
+
+User-supplied Uruguay package photos add Strong and XXL and an alternate Corrugado reference. Only tightly cropped packaging is included; WhatsApp UI and personal contact details were removed. The expanded detector tests all three local references in addition to the five original references. Two new transparent monsters were generated with the built-in image_gen tool; final prompts are in [additional-prompts.json](assets/additional-prompts.json), with PNG and WebP assets for `strong` and `xxl`.
+
+The main menu includes an embedded [Amor guide](https://nicocamarao.github.io/amor-guia/) and a full-page fallback link. This is a live external iframe, so changes on the guide site appear here as well. Browser tests check iframe content and preservation of previously earned rewards.

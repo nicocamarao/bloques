@@ -23,6 +23,7 @@ for(let yy=0;yy<20;yy++)for(let xx=0;xx<20;xx++){
 }
 if(actual.length<180)return null;
 let aa=normal(actual),bb=normal(reference),similarity=Math.abs(aa.reduce((sum,v,i)=>sum+v*bb[i],0));
+if((t.id==='strong'||t.id==='xxl')&&similarity<.73)return null;
 if(similarity<(goodFrom.length>=25&&goodFrom.length/unique.length>.4?.58:.65)||goodFrom.length<10)return null;
 return {id:t.id,quad,inliers:goodFrom.length,score:similarity,variant:t.variant}}
 function sample(data,w,h,x,y){let xx=Math.max(0,Math.min(w-1.001,x)),yy=Math.max(0,Math.min(h-1.001,y)),ix=xx|0,iy=yy|0,fx=xx-ix,fy=yy-iy,p=iy*w+ix;return (data[p]*(1-fx)+data[p+1]*fx)*(1-fy)+(data[p+w]*(1-fx)+data[p+w+1]*fx)*fy}
@@ -36,7 +37,7 @@ candidates.sort((a,b)=>b.c-a.c);for(let q of candidates.slice(0,24))for(let ds o
 }let ranked=Object.values(byId).sort((a,b)=>b.score-a.score);best=ranked[0];return best&&best.score>.84&&(!ranked[1]||best.score-ranked[1].score>.055)?best:null}
 function detect(rgba,w,h,targets){
  const im=gray(rgba,w,h),f=features(im,850),byId={};f.image=im;
- for(let attempt=0;attempt<3;attempt++){
+ for(let attempt=0;attempt<5;attempt++){
   for(const t of targets){const r=match(f,t,w,h);if(r&&(!byId[r.id]||r.score>byId[r.id].score))byId[r.id]=r;}
   const ranked=Object.values(byId).sort((a,b)=>b.score-a.score);
   if(ranked[0]&&(!ranked[1]||ranked[0].score-ranked[1].score>.08))return ranked[0];
