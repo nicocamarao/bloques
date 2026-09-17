@@ -7,3 +7,14 @@
 #targetExamples{grid-template-columns:repeat(2,1fr)}#targetExamples img{height:85px}#reticle span{left:-30px;right:-30px}#welcome h1{font-size:clamp(52px,6.8vw,84px)}
 
 @media(max-width:640px){#welcome .hero{position:relative;top:auto;right:auto;width:190px;height:190px;margin:14px auto 0}#welcome h1{font-size:52px;margin:14px 0 20px}#welcome>p{max-width:none}}
+
+/* Burger King links and creator attribution. */
+.header-brand,.footer-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.bk-logo-link{display:inline-flex;flex-shrink:0;align-items:center;justify-content:center;border-radius:12px;min-width:44px;min-height:44px}
+.bk-logo-link img{display:block;width:56px;height:56px;object-fit:contain}
+.creator-credit,#welcome>p.creator-credit{font-size:13px;line-height:1.6;color:var(--muted);letter-spacing:0;margin:16px 0;max-width:none}
+.creator-credit a{color:var(--acid);text-decoration:underline;text-underline-offset:4px;display:inline-block;padding:8px 0}
+.bk-visit{position:relative;display:flex;align-items:center;gap:14px;max-width:350px;margin-top:22px;padding-top:18px;border-top:1px solid #3c3d31}
+.bk-visit>a:not(.bk-logo-link){font-size:14px;line-height:1.5;text-underline-offset:4px}
+#footer{align-items:center;flex-wrap:wrap}#footer .creator-credit{margin:0}.footer-brand small{display:inline-block;font-size:9px;margin-top:6px}
+@media(max-width:640px){.header-brand{gap:8px}.header-brand .bk-logo-link img{width:44px;height:44px}.header-brand .wordmark{font-size:18px}.header-brand .wordmark span{font-size:10px}.bk-visit{max-width:none}#footer{gap:10px}#footer .creator-credit{width:100%}}
