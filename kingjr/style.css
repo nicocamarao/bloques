@@ -3,3 +3,7 @@
 .pizzaSprite{clip-path:url(#pizza-clip);object-fit:fill!important}.card img.pizzaSprite{width:200px;max-width:100%;display:block;margin:auto}@media(max-width:640px){.card img.pizzaSprite{width:155px}}
 
 #rewardImage{display:block;width:min(294px,100%);height:auto;margin:22px auto;background:white;image-rendering:pixelated}#downloadQR{max-width:none;text-decoration:none;justify-content:center}#targetExamples{grid-template-columns:1fr}#targetExamples img{height:160px}
+
+#targetExamples{grid-template-columns:repeat(2,1fr)}#targetExamples img{height:85px}#reticle span{left:-30px;right:-30px}#welcome h1{font-size:clamp(52px,6.8vw,84px)}
+
+@media(max-width:640px){#welcome .hero{position:relative;top:auto;right:auto;width:190px;height:190px;margin:14px auto 0}#welcome h1{font-size:52px;margin:14px 0 20px}#welcome>p{max-width:none}}
