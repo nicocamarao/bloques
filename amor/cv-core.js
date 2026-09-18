@@ -24,7 +24,7 @@ for(let yy=0;yy<20;yy++)for(let xx=0;xx<20;xx++){
 if(actual.length<180)return null;
 let aa=normal(actual),bb=normal(reference),similarity=Math.abs(aa.reduce((sum,v,i)=>sum+v*bb[i],0));
 if((t.id==='strong'||t.id==='xxl')&&similarity<.73)return null;
-if(similarity<(goodFrom.length>=25&&goodFrom.length/unique.length>.4?.58:.65)||goodFrom.length<10)return null;
+if(similarity<(goodFrom.length>=25&&goodFrom.length/unique.length>.4?.55:.60)||goodFrom.length<8)return null;
 return {id:t.id,quad,inliers:goodFrom.length,score:similarity,variant:t.variant}}
 function sample(data,w,h,x,y){let xx=Math.max(0,Math.min(w-1.001,x)),yy=Math.max(0,Math.min(h-1.001,y)),ix=xx|0,iy=yy|0,fx=xx-ix,fy=yy-iy,p=iy*w+ix;return (data[p]*(1-fx)+data[p+1]*fx)*(1-fy)+(data[p+w]*(1-fx)+data[p+w+1]*fx)*fy}
 function normal(values){let mean=values.reduce((a,b)=>a+b,0)/values.length;let a=values.map(x=>x-mean),norm=Math.sqrt(a.reduce((s,x)=>s+x*x,0));return norm>1?a.map(x=>x/norm):a.map(()=>0)}

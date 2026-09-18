@@ -17,7 +17,7 @@ const server=http.createServer((req,res)=>{
  await page.goto(`http://127.0.0.1:${server.address().port}`);
  await page.waitForFunction(()=>!document.getElementById('start').disabled);
  const detections=await page.evaluate(async()=>{
-  const worker=new Worker('detector-worker.js?v=amor-2');
+  const worker=new Worker('detector-worker.js?v=amor-3');
   const message=()=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Worker timeout')),15000);worker.onmessage=e=>{clearTimeout(timeout);resolve(e.data)};});
   await message();const detections=[];
   for(const id of ['rose','thin','dreams','longlove','fruit','strong','xxl']){
@@ -74,7 +74,19 @@ const server=http.createServer((req,res)=>{
  await page.click('#collectionBtn');assert.equal(await page.locator('#rewardBtn').isVisible(),true);
  await page.evaluate(async()=>{await AmorGame.capture('strong');await AmorGame.capture('xxl')});
  await page.reload();assert.equal(await page.evaluate(()=>gameState.reward.image),reward);
+ // Exercise the actual bundled OCR engine with only distinctive fragments visible.
+ const textChecks=await page.evaluate(async()=>{
+  await AmorText.init();const outputs=[];
+  for(const [word,id] of [['ULTRA','thin'],['FUERTE','strong'],['XXL','xxl'],['CORRUG','dreams'],['LONG','longlove'],['FRUIT','fruit'],['LISO','rose'],['AMOR',null],['EXTRA',null]]){
+   const canvas=document.createElement('canvas');canvas.width=600;canvas.height=240;const c=canvas.getContext('2d');c.fillStyle='#ebe4d7';c.fillRect(0,0,600,240);c.fillStyle='#302047';c.font='bold 70px Arial';c.fillText(word,70,145);
+   await new Promise(r=>setTimeout(r,560));await AmorText.scan(canvas,100);
+   outputs.push({word,expected:id,actual:AmorText.latest(100,600,240)?.id||null});
+  }return outputs;
+ });
+ assert.ok(textChecks.every(x=>x.expected===x.actual),JSON.stringify(textChecks));
+ assert.equal(await page.evaluate(()=>AmorText.identify([{text:'ULTRA',confidence:80},{text:'FUERTE',confidence:80}])),null);
+ assert.equal(await page.evaluate(()=>AmorText.latest(999,600,240)),null,'Do not reuse text from an old camera session');
  assert.deepEqual(errors,[]);
- console.log('Browser: worker startup, demo isolation, immediate matching creature, confirmation gate, brand switching, seven captures, persistent reward passed');
+ console.log('Browser: worker startup, demo isolation, immediate matching creature, confirmation gate, brand switching, seven captures, persistent reward and real OCR fragments passed');
  } finally {await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});
